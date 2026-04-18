@@ -40,16 +40,64 @@ function IntroScreen({
   onSelectMode: (mode: AppMode) => void;
   dismissing: boolean;
 }) {
+  const selectedRef = useRef(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
+    let recognition: SpeechRecognition | null = null;
+
+    const startListening = () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        if (selectedRef.current || cancelled) return;
+        let transcript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript + " ";
+        }
+        const lower = transcript.toLowerCase();
+        if (lower.includes("scene")) {
+          selectedRef.current = true;
+          try { recognition?.stop(); } catch { /* */ }
+          onSelectMode("scene");
+        } else if (lower.includes("read")) {
+          selectedRef.current = true;
+          try { recognition?.stop(); } catch { /* */ }
+          onSelectMode("read");
+        }
+      };
+
+      recognition.onend = () => {
+        if (!cancelled && !selectedRef.current) {
+          try { recognition?.start(); } catch { /* */ }
+        }
+      };
+
+      recognition.onerror = () => {};
+
+      try {
+        recognition.start();
+        setVoiceListening(true);
+      } catch { /* */ }
+    };
 
     const doSpeak = () => {
       if (cancelled) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(
-        "Welcome to SceneSpeak. Choose a mode to begin."
+        "Welcome to SceneSpeak. Say scene mode or read mode to begin. You can also tap the screen."
       );
       u.rate = 1.8;
+      u.onend = () => {
+        if (!cancelled && !selectedRef.current) startListening();
+      };
       window.speechSynthesis.speak(u);
     };
 
@@ -68,8 +116,9 @@ function IntroScreen({
       clearTimeout(timer);
       window.speechSynthesis.removeEventListener("voiceschanged", doSpeak);
       window.speechSynthesis.cancel();
+      try { recognition?.stop(); } catch { /* */ }
     };
-  }, []);
+  }, [onSelectMode]);
 
   const unlockAudio = () => {
     const a = document.createElement("audio");
@@ -165,6 +214,19 @@ function IntroScreen({
         </button>
 
         <div className="w-full h-px bg-[#222222]" />
+
+        {/* Voice listening indicator */}
+        {voiceListening && (
+          <div className="flex items-center gap-2 mt-5">
+            <span
+              className="w-2 h-2 rounded-full bg-[#EF5350]"
+              style={{ animation: "breathe 2s ease-in-out infinite" }}
+            />
+            <span className="text-[#666666] text-[13px]">
+              Listening — say &quot;scene mode&quot; or &quot;read mode&quot;
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Geometric shapes — decorative ─────────────── */}
