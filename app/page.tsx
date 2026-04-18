@@ -88,9 +88,11 @@ function IntroScreen({
       } catch { /* */ }
     };
 
-    const doSpeak = () => {
+    const doSpeak = (attempt = 0) => {
       if (cancelled) return;
+      // Force-reset stuck speechSynthesis (common browser bug on reload)
       window.speechSynthesis.cancel();
+
       const u = new SpeechSynthesisUtterance(
         "Welcome to SceneSpeak. Say scene mode or read mode to begin. You can also tap the screen."
       );
@@ -98,23 +100,46 @@ function IntroScreen({
       u.onend = () => {
         if (!cancelled && !selectedRef.current) startListening();
       };
+      u.onerror = () => {
+        // Retry once on error
+        if (!cancelled && attempt < 1) {
+          setTimeout(() => doSpeak(attempt + 1), 500);
+        }
+      };
       window.speechSynthesis.speak(u);
+
+      // Chrome bug: utterance can silently fail. If after 3s nothing
+      // has spoken and we haven't been cancelled, force retry.
+      setTimeout(() => {
+        if (cancelled || selectedRef.current) return;
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+        if (attempt < 2) doSpeak(attempt + 1);
+      }, 3000);
     };
 
+    // Immediately cancel any leftover speech from prior page load
+    window.speechSynthesis.cancel();
+
     const timer = setTimeout(() => {
-      if (window.speechSynthesis.getVoices().length > 0) {
-        doSpeak();
-      } else {
-        window.speechSynthesis.addEventListener("voiceschanged", doSpeak, {
-          once: true,
-        });
-      }
-    }, 600);
+      // Warm up the engine with a silent utterance
+      const warmup = new SpeechSynthesisUtterance("");
+      window.speechSynthesis.speak(warmup);
+
+      setTimeout(() => {
+        if (cancelled) return;
+        if (window.speechSynthesis.getVoices().length > 0) {
+          doSpeak();
+        } else {
+          window.speechSynthesis.addEventListener("voiceschanged", () => doSpeak(), {
+            once: true,
+          });
+        }
+      }, 200);
+    }, 400);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      window.speechSynthesis.removeEventListener("voiceschanged", doSpeak);
       window.speechSynthesis.cancel();
       try { recognition?.stop(); } catch { /* */ }
     };
