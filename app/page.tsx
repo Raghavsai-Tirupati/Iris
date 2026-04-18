@@ -81,35 +81,43 @@ function IntroScreen({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
       style={{
-        background: "#111111",
+        background: "#000000",
         animation: dismissing ? "fadeOut 0.4s ease-out forwards" : undefined,
       }}
     >
-      <div className="flex-1 min-h-0" />
-
-      {/* Logo */}
-      <div
-        className="flex flex-col items-center px-8"
-        style={{ animation: "fadeInUp 0.5s ease-out" }}
-      >
-        <h1 className="text-white text-[34px] font-bold tracking-tight">
+      {/* ── Text content — left aligned, editorial ────── */}
+      <div className="relative z-10 flex flex-col px-8 pt-20 sm:pt-28">
+        <h1
+          className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight"
+          style={{ animation: "fadeInUp 0.5s ease-out" }}
+        >
           SceneSpeak
         </h1>
-        <p className="text-[#B0B0B0] text-[17px] mt-2">
-          Your AI-powered visual guide
+
+        <p
+          className="text-white text-[22px] sm:text-[26px] leading-snug mt-4 max-w-[320px]"
+          style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
+        >
+          AI-powered visual guide for the world around you
+        </p>
+
+        <p
+          className="text-[#808080] text-[12px] tracking-[0.2em] uppercase mt-6"
+          style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+        >
+          Your eyes, amplified
         </p>
       </div>
 
-      {/* Mode buttons */}
+      {/* ── Mode buttons ─────────────────────────────── */}
       <div
-        className="flex flex-col gap-4 px-6 mt-14"
-        style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+        className="relative z-10 flex flex-col gap-3 px-8 mt-10"
+        style={{ animation: "fadeInUp 0.5s ease-out 0.15s both" }}
       >
-        {/* Scene Mode */}
         <button
-          className="w-full rounded-2xl border border-[#333333] bg-[#1A1A1A] p-5 text-left active:bg-[#252525] transition-colors min-h-[72px]"
+          className="w-full rounded-2xl bg-[#111111] border border-[#222222] p-5 text-left active:bg-[#1A1A1A] transition-colors min-h-[72px]"
           onClick={() => {
             unlockAudio();
             onSelectMode("scene");
@@ -117,24 +125,26 @@ function IntroScreen({
           aria-label="Scene Mode: Tap to ask questions about what the camera sees"
         >
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl border border-[#333333] bg-[#222222] flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#4FC3F7]">
+            <div className="w-12 h-12 rounded-full bg-[#4FC3F7]/15 flex items-center justify-center flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#4FC3F7]">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
             </div>
             <div>
-              <p className="text-white text-[20px] font-semibold">Scene Mode</p>
-              <p className="text-[#B0B0B0] text-[15px] mt-1">
+              <p className="text-white text-[18px] font-medium">Scene Mode</p>
+              <p className="text-[#808080] text-[14px] mt-0.5">
                 Ask about what you see
               </p>
             </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#333333] ml-auto flex-shrink-0">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </div>
         </button>
 
-        {/* Read Mode */}
         <button
-          className="w-full rounded-2xl border border-[#333333] bg-[#1A1A1A] p-5 text-left active:bg-[#252525] transition-colors min-h-[72px]"
+          className="w-full rounded-2xl bg-[#111111] border border-[#222222] p-5 text-left active:bg-[#1A1A1A] transition-colors min-h-[72px]"
           onClick={() => {
             unlockAudio();
             onSelectMode("read");
@@ -142,8 +152,8 @@ function IntroScreen({
           aria-label="Read Mode: Read any text the camera sees"
         >
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl border border-[#333333] bg-[#222222] flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#81C784]">
+            <div className="w-12 h-12 rounded-full bg-[#81C784]/15 flex items-center justify-center flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#81C784]">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -151,23 +161,108 @@ function IntroScreen({
               </svg>
             </div>
             <div>
-              <p className="text-white text-[20px] font-semibold">Read Mode</p>
-              <p className="text-[#B0B0B0] text-[15px] mt-1">
-                Read text from signs, menus, documents
+              <p className="text-white text-[18px] font-medium">Read Mode</p>
+              <p className="text-[#808080] text-[14px] mt-0.5">
+                Read signs, menus, documents
               </p>
             </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#333333] ml-auto flex-shrink-0">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </div>
         </button>
       </div>
 
-      <div className="flex-1 min-h-0" />
+      {/* ── Geometric shapes — decorative ─────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 h-[40%] pointer-events-none overflow-hidden" aria-hidden="true">
+        {/* Green semicircle */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 220,
+            height: 220,
+            background: "#4ADE80",
+            bottom: -60,
+            left: "15%",
+          }}
+        />
+        {/* Pink diagonal bars */}
+        <div className="absolute" style={{ bottom: 80, left: -20, transform: "rotate(-35deg)" }}>
+          <div className="w-[140px] h-[8px] bg-[#F472B6] rounded-full mb-3" />
+          <div className="w-[100px] h-[8px] bg-[#F472B6] rounded-full mb-3" />
+          <div className="w-[120px] h-[8px] bg-[#F472B6] rounded-full" />
+        </div>
+        {/* Yellow rectangle */}
+        <div
+          className="absolute rounded-lg"
+          style={{
+            width: 50,
+            height: 100,
+            background: "#FACC15",
+            bottom: 40,
+            right: "35%",
+          }}
+        >
+          <div className="w-5 h-5 rounded-full bg-black mt-5 mx-auto" />
+        </div>
+        {/* Cyan bar */}
+        <div
+          className="absolute rounded-sm"
+          style={{
+            width: 14,
+            height: 120,
+            background: "#22D3EE",
+            bottom: 20,
+            right: "22%",
+          }}
+        />
+        {/* Magenta triangle */}
+        <div
+          className="absolute"
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "35px solid transparent",
+            borderRight: "35px solid transparent",
+            borderBottom: "60px solid #E879F9",
+            bottom: 100,
+            right: "12%",
+            transform: "rotate(30deg)",
+          }}
+        />
+        {/* Blue arch */}
+        <div
+          className="absolute rounded-t-full"
+          style={{
+            width: 100,
+            height: 50,
+            border: "18px solid #60A5FA",
+            borderBottom: "none",
+            background: "transparent",
+            bottom: -5,
+            right: -10,
+          }}
+        />
+        {/* Small blue circle */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 30,
+            height: 30,
+            background: "#60A5FA",
+            bottom: 110,
+            left: "30%",
+          }}
+        />
+      </div>
 
-      {/* Bottom */}
+      {/* ── Footer ────────────────────────────────────── */}
+      <div className="flex-1 min-h-0" />
       <div
-        className="flex flex-col items-center pb-8"
+        className="relative z-10 flex flex-col items-start px-8 pb-8"
         style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
       >
-        <p className="text-[#808080] text-[13px]">
+        <p className="text-[#555555] text-[12px] tracking-[0.15em] uppercase">
           Hook &apos;Em Hacks 2026 &bull; UT Austin
         </p>
       </div>
