@@ -83,7 +83,7 @@ function IntroScreen({
     <div
       className="fixed inset-0 z-50 flex flex-col"
       style={{
-        background: "#111",
+        background: "#111111",
         animation: dismissing ? "fadeOut 0.4s ease-out forwards" : undefined,
       }}
     >
@@ -94,22 +94,22 @@ function IntroScreen({
         className="flex flex-col items-center px-8"
         style={{ animation: "fadeInUp 0.5s ease-out" }}
       >
-        <h1 className="text-white text-[32px] font-semibold tracking-tight">
+        <h1 className="text-white text-[34px] font-bold tracking-tight">
           SceneSpeak
         </h1>
-        <p className="text-white/40 text-[15px] mt-2">
+        <p className="text-[#B0B0B0] text-[17px] mt-2">
           Your AI-powered visual guide
         </p>
       </div>
 
       {/* Mode buttons */}
       <div
-        className="flex flex-col gap-3 px-8 mt-12"
+        className="flex flex-col gap-4 px-6 mt-14"
         style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
       >
         {/* Scene Mode */}
         <button
-          className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.04] p-5 text-left active:bg-white/[0.08] transition-colors"
+          className="w-full rounded-2xl border border-[#333333] bg-[#1A1A1A] p-5 text-left active:bg-[#252525] transition-colors min-h-[72px]"
           onClick={() => {
             unlockAudio();
             onSelectMode("scene");
@@ -117,15 +117,15 @@ function IntroScreen({
           aria-label="Scene Mode: Tap to ask questions about what the camera sees"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center flex-shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+            <div className="w-14 h-14 rounded-2xl border border-[#333333] bg-[#222222] flex items-center justify-center flex-shrink-0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#4FC3F7]">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
             </div>
             <div>
-              <p className="text-white text-[16px] font-medium">Scene Mode</p>
-              <p className="text-white/35 text-[13px] mt-0.5">
+              <p className="text-white text-[20px] font-semibold">Scene Mode</p>
+              <p className="text-[#B0B0B0] text-[15px] mt-1">
                 Ask about what you see
               </p>
             </div>
@@ -134,7 +134,7 @@ function IntroScreen({
 
         {/* Read Mode */}
         <button
-          className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.04] p-5 text-left active:bg-white/[0.08] transition-colors"
+          className="w-full rounded-2xl border border-[#333333] bg-[#1A1A1A] p-5 text-left active:bg-[#252525] transition-colors min-h-[72px]"
           onClick={() => {
             unlockAudio();
             onSelectMode("read");
@@ -142,8 +142,8 @@ function IntroScreen({
           aria-label="Read Mode: Read any text the camera sees"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center flex-shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+            <div className="w-14 h-14 rounded-2xl border border-[#333333] bg-[#222222] flex items-center justify-center flex-shrink-0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#81C784]">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -151,8 +151,8 @@ function IntroScreen({
               </svg>
             </div>
             <div>
-              <p className="text-white text-[16px] font-medium">Read Mode</p>
-              <p className="text-white/35 text-[13px] mt-0.5">
+              <p className="text-white text-[20px] font-semibold">Read Mode</p>
+              <p className="text-[#B0B0B0] text-[15px] mt-1">
                 Read text from signs, menus, documents
               </p>
             </div>
@@ -167,7 +167,7 @@ function IntroScreen({
         className="flex flex-col items-center pb-8"
         style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
       >
-        <p className="text-white/20 text-[11px]">
+        <p className="text-[#808080] text-[13px]">
           Hook &apos;Em Hacks 2026 &bull; UT Austin
         </p>
       </div>
