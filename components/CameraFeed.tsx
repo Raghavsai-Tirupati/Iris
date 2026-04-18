@@ -72,12 +72,10 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
 
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Freeze: show the captured frame as a still image
       setFrozenSrc(canvas.toDataURL("image/jpeg", 0.9));
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 350);
 
-      // Return base64 for the API (lower quality to save bandwidth)
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
       return dataUrl.split(",")[1];
     },
@@ -90,10 +88,10 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
   if (error) {
     return (
       <div
-        className="fixed inset-0 bg-[#050510] flex items-center justify-center p-8"
+        className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center p-8"
         role="alert"
       >
-        <p className="text-white/70 text-lg text-center leading-relaxed">
+        <p className="text-white/50 text-sm text-center leading-relaxed font-[family-name:var(--font-pixel)]">
           {error}
         </p>
       </div>
@@ -102,7 +100,6 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
 
   return (
     <>
-      {/* Live camera feed — hidden when frozen */}
       <video
         ref={videoRef}
         autoPlay
@@ -113,7 +110,6 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
       />
       <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
-      {/* Frozen still image */}
       {frozenSrc && (
         <img
           src={frozenSrc}
@@ -123,37 +119,16 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
         />
       )}
 
-      {/* Vignette overlay — always on top of camera/frozen image */}
+      {/* Subtle edge darkening */}
       <div
         className="fixed inset-0 pointer-events-none"
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)",
+            "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 15%, transparent 80%, rgba(0,0,0,0.5) 100%)",
         }}
       />
 
-      {/* Bottom gradient for text readability */}
-      <div
-        className="fixed bottom-0 left-0 right-0 h-40 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)",
-        }}
-      />
-
-      {/* Top gradient */}
-      <div
-        className="fixed top-0 left-0 right-0 h-28 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)",
-        }}
-      />
-
-      {/* Camera flash effect */}
       {showFlash && (
         <div
           className="fixed inset-0 bg-white pointer-events-none z-30"

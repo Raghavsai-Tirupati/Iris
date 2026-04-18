@@ -5,7 +5,6 @@ import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
 import StatusIndicator from "@/components/StatusIndicator";
 import { AppState, Message } from "@/lib/types";
 
-// Tiny silent WAV to unlock Safari audio playback on user gesture
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
@@ -47,10 +46,10 @@ function IntroScreen({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden"
+      className="fixed inset-0 z-50 cursor-pointer"
       style={{
-        background: "#050510",
-        animation: dismissing ? "fadeOut 0.5s ease-out forwards" : undefined,
+        background: "#0a0a0a",
+        animation: dismissing ? "fadeOut 0.4s ease-out forwards" : undefined,
       }}
       onClick={onStart}
       onTouchStart={(e) => {
@@ -61,104 +60,58 @@ function IntroScreen({
       tabIndex={0}
       aria-label="Tap anywhere to begin using SceneSpeak"
     >
-      {/* Floating gradient orbs */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: "500px",
-          height: "500px",
-          top: "-15%",
-          left: "-20%",
-          background:
-            "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
-          animation: "orbFloat1 12s ease-in-out infinite",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: "450px",
-          height: "450px",
-          bottom: "-10%",
-          right: "-15%",
-          background:
-            "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
-          animation: "orbFloat2 14s ease-in-out infinite",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: "300px",
-          height: "300px",
-          top: "35%",
-          right: "5%",
-          background:
-            "radial-gradient(circle, rgba(79,70,229,0.1) 0%, transparent 70%)",
-          animation: "orbFloat3 10s ease-in-out infinite",
-        }}
-        aria-hidden="true"
-      />
+      {/* Border frame */}
+      <div className="absolute inset-4 border border-white/[0.08]" />
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center">
-        {/* Logo */}
+      {/* Center content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
         <h1
-          className="text-7xl font-bold tracking-tight"
-          style={{
-            animation: "fadeInUp 1s ease-out",
-            background: "linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #818cf8 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
+          className="font-[family-name:var(--font-pixel)] text-white text-2xl sm:text-3xl text-center leading-relaxed"
+          style={{ animation: "fadeInUp 0.6s ease-out" }}
         >
-          SceneSpeak
+          SCENESPEAK
         </h1>
 
-        {/* Divider line */}
+        <p
+          className="text-white/40 text-sm mt-6 tracking-widest uppercase"
+          style={{ animation: "fadeInUp 0.6s ease-out 0.1s both" }}
+        >
+          AI-powered visual guide
+        </p>
+
         <div
-          className="w-12 h-px mt-5"
-          style={{
-            background:
-              "linear-gradient(to right, transparent, rgba(167,139,250,0.5), transparent)",
-            animation: "fadeInUp 1s ease-out 0.15s both",
-          }}
-        />
-
-        {/* Tagline */}
-        <p
-          className="text-white/50 text-lg mt-5 font-light tracking-wide"
-          style={{ animation: "fadeInUp 1s ease-out 0.25s both" }}
+          className="mt-16 flex items-center gap-2"
+          style={{ animation: "fadeInUp 0.6s ease-out 0.2s both" }}
         >
-          Your AI-powered visual guide
-        </p>
-
-        {/* Tap prompt */}
-        <p
-          className="text-white/25 text-sm mt-20 tracking-widest uppercase font-medium"
-          style={{ animation: "pulse-glow 3s ease-in-out infinite" }}
-        >
-          Tap anywhere to begin
-        </p>
-      </div>
-
-      {/* Hackathon credit */}
-      <div
-        className="absolute bottom-10 flex flex-col items-center gap-2"
-        style={{ animation: "fadeInUp 1s ease-out 0.6s both" }}
-      >
-        <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-1.5">
-          <span className="text-white/25 text-xs tracking-wide">
-            Hook &apos;Em Hacks 2026
+          <span className="font-[family-name:var(--font-pixel)] text-white/20 text-[10px]">
+            [
           </span>
-          <span className="w-1 h-1 rounded-full bg-white/15" />
-          <span className="text-white/25 text-xs tracking-wide">
-            Multimodal Search &amp; Generation
+          <span className="font-[family-name:var(--font-pixel)] text-white/30 text-[10px] tracking-wider">
+            TAP TO BEGIN
+          </span>
+          <span
+            className="font-[family-name:var(--font-pixel)] text-white/30 text-[10px]"
+            style={{ animation: "blink 1s step-end infinite" }}
+          >
+            _
+          </span>
+          <span className="font-[family-name:var(--font-pixel)] text-white/20 text-[10px]">
+            ]
           </span>
         </div>
+      </div>
+
+      {/* Bottom info */}
+      <div
+        className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-1"
+        style={{ animation: "fadeInUp 0.6s ease-out 0.4s both" }}
+      >
+        <p className="text-white/15 text-[10px] font-[family-name:var(--font-pixel)] tracking-wide">
+          HOOK &apos;EM HACKS 2026
+        </p>
+        <p className="text-white/10 text-[9px] tracking-widest uppercase">
+          Multimodal Search &amp; Generation
+        </p>
       </div>
     </div>
   );
@@ -183,12 +136,10 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
 
-  // Keep ref in sync
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // Initialize speech recognition once
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
@@ -207,7 +158,6 @@ export default function Home() {
     };
 
     recognition.onend = () => {
-      // Safari kills continuous recognition randomly — restart if still listening
       if (isListeningRef.current) {
         try {
           recognition.start();
@@ -218,11 +168,9 @@ export default function Home() {
     };
 
     recognition.onerror = () => {};
-
     recognitionRef.current = recognition;
   }, []);
 
-  // Unfreeze camera whenever we return to idle
   useEffect(() => {
     if (appState === "idle") {
       cameraRef.current?.unfreeze();
@@ -230,11 +178,8 @@ export default function Home() {
     }
   }, [appState]);
 
-  // Dismiss intro and enter the app
   const handleIntroTap = useCallback(() => {
     if (introState !== "visible") return;
-
-    // Unlock audio during this user gesture
     const audio = audioRef.current;
     if (audio) {
       audio.src = SILENT_WAV;
@@ -242,13 +187,21 @@ export default function Home() {
     }
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-
-    // Start fade-out, then hide
     setIntroState("dismissing");
-    setTimeout(() => setIntroState("hidden"), 500);
+    setTimeout(() => setIntroState("hidden"), 400);
   }, [introState]);
 
-  // Process the transcript: call Gemini API then play audio response
+  const speakFallback = useCallback((text: string | null) => {
+    if (text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.onend = () => setAppState("idle");
+      u.onerror = () => setAppState("idle");
+      window.speechSynthesis.speak(u);
+    } else {
+      setAppState("idle");
+    }
+  }, []);
+
   const processRequest = useCallback(async (transcript: string) => {
     if (!transcript) {
       setAppState("idle");
@@ -300,7 +253,6 @@ export default function Home() {
         setResponseText(text || null);
         setAppState("speaking");
 
-        // Play via the pre-unlocked audio element
         const audio = audioRef.current;
         if (audio) {
           const url = URL.createObjectURL(blob);
@@ -335,72 +287,41 @@ export default function Home() {
       setAppState("speaking");
       speakFallback(msg);
     }
-  }, []);
+  }, [speakFallback]);
 
-  // Browser TTS fallback
-  const speakFallback = useCallback((text: string | null) => {
-    if (text) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.onend = () => setAppState("idle");
-      u.onerror = () => setAppState("idle");
-      window.speechSynthesis.speak(u);
-    } else {
-      setAppState("idle");
-    }
-  }, []);
-
-  // Full-screen tap handler
   const handleScreenTap = useCallback(() => {
-    // Unlock audio on every tap (Safari requires user gesture)
     const audio = audioRef.current;
     if (audio) {
       audio.src = SILENT_WAV;
       audio.play().then(() => audio.pause()).catch(() => {});
     }
-    // Unlock SpeechSynthesis too
     window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
 
     const isBusy = appState === "thinking" || appState === "speaking";
     if (isBusy) return;
 
     if (isListening) {
-      // === STOP LISTENING ===
       playChime(440);
       setIsListening(false);
-
-      // Stop recognition
       try {
         recognitionRef.current?.stop();
       } catch {
         // Already stopped
       }
-
-      // Grab transcript immediately — no async callback needed
       const transcript = transcriptRef.current;
       transcriptRef.current = "";
-
-      // Clear frame timeout if still pending
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
-
-      // Process the request
       processRequest(transcript);
     } else {
-      // === START LISTENING ===
       playChime(1200);
       setIsListening(true);
       setAppState("listening");
-
-      // Reset transcript
       transcriptRef.current = "";
-
-      // Start speech recognition
       try {
         recognitionRef.current?.start();
       } catch {
         // Already started
       }
-
-      // Capture photo 500ms after tap — freezes the camera with flash
       frameTimeoutRef.current = setTimeout(() => {
         frameRef.current = cameraRef.current?.captureAndFreeze() || null;
       }, 500);
@@ -408,8 +329,7 @@ export default function Home() {
   }, [appState, isListening, processRequest]);
 
   return (
-    <main className="fixed inset-0 bg-[#111]">
-      {/* Intro screen — shown once per session */}
+    <main className="fixed inset-0 bg-[#0a0a0a]">
       {introState !== "hidden" && (
         <IntroScreen
           onStart={handleIntroTap}
@@ -417,10 +337,8 @@ export default function Home() {
         />
       )}
 
-      {/* Camera feed (live or frozen) */}
       <CameraFeed ref={cameraRef} />
 
-      {/* Status indicator + response text */}
       {introState === "hidden" && (
         <StatusIndicator
           state={appState}
@@ -429,10 +347,8 @@ export default function Home() {
         />
       )}
 
-      {/* Pre-unlocked audio element for playback */}
       <audio ref={audioRef} className="hidden" playsInline />
 
-      {/* Full-screen tap target (only active after intro dismissed) */}
       {introState === "hidden" && (
         <div
           className="fixed inset-0 z-40"

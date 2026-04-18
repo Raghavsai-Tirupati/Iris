@@ -7,7 +7,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #050510;
+  background: #0a0a0a;
   height: 100%;
   width: 100%;
   -webkit-user-select: none;
@@ -15,48 +15,12 @@ body {
   touch-action: manipulation;
 }
 
-/* ── Intro animations ──────────────────────────────────── */
-
-@keyframes orbFloat1 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -40px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.95);
-  }
-}
-
-@keyframes orbFloat2 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(-40px, 30px) scale(1.05);
-  }
-  66% {
-    transform: translate(25px, -25px) scale(0.9);
-  }
-}
-
-@keyframes orbFloat3 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(20px, 30px) scale(1.15);
-  }
-}
+/* ── Intro ─────────────────────────────────────────────── */
 
 @keyframes fadeInUp {
   0% {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(16px);
   }
   100% {
     opacity: 1;
@@ -67,34 +31,23 @@ body {
 @keyframes fadeOut {
   0% {
     opacity: 1;
-    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: scale(1.02);
   }
 }
 
-@keyframes pulse-glow {
+@keyframes blink {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 1;
   }
   50% {
-    opacity: 0.9;
+    opacity: 0;
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-/* ── Camera effects ────────────────────────────────────── */
+/* ── Camera ────────────────────────────────────────────── */
 
 @keyframes cameraFlash {
   0% {
@@ -102,41 +55,5 @@ body {
   }
   100% {
     opacity: 0;
-  }
-}
-
-/* ── Status animations ─────────────────────────────────── */
-
-@keyframes breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
-}
-
-@keyframes slideUp {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes dotPulse {
-  0%,
-  80%,
-  100% {
-    opacity: 0.3;
-  }
-  40% {
-    opacity: 1;
   }
 }

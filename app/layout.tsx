@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Press_Start_2P } from "next/font/google";
 import "./globals.css";
+
+const pixel = Press_Start_2P({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pixel",
+});
 
 export const metadata: Metadata = {
   title: "SceneSpeak — Visual Assistant",
@@ -21,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className={`${pixel.variable} antialiased`}>{children}</body>
     </html>
   );
 }
