@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
-import VoiceInput from "@/components/VoiceInput";
 import StatusIndicator from "@/components/StatusIndicator";
 import { AppState, Message } from "@/lib/types";
 
@@ -31,10 +30,19 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const frameRef = useRef<string | null>(null);
   const frameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const transcriptRef = useRef("");
+  const isListeningRef = useRef(false);
+  const historyRef = useRef<Message[]>([]);
+
   const [appState, setAppState] = useState<AppState>("idle");
-  const [history, setHistory] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
+
+  // Keep ref in sync
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   // Welcome message on first load
   useEffect(() => {
@@ -47,6 +55,40 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Initialize speech recognition once
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let text = "";
+      for (let i = 0; i < event.results.length; i++) {
+        text += event.results[i][0].transcript + " ";
+      }
+      transcriptRef.current = text.trim();
+    };
+
+    recognition.onend = () => {
+      // Safari kills continuous recognition randomly — restart if still listening
+      if (isListeningRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          // Already running
+        }
+      }
+    };
+
+    recognition.onerror = () => {};
+
+    recognitionRef.current = recognition;
+  }, []);
+
   // Unfreeze camera whenever we return to idle
   useEffect(() => {
     if (appState === "idle") {
@@ -55,108 +97,110 @@ export default function Home() {
     }
   }, [appState]);
 
-  // Play audio blob or fall back to browser speech synthesis
-  const playAudio = useCallback((blob: Blob | null, text: string | null) => {
-    const audio = audioRef.current;
+  // Process the transcript: call Gemini API then play audio response
+  const processRequest = useCallback(async (transcript: string) => {
+    if (!transcript) {
+      setAppState("idle");
+      return;
+    }
 
-    const fallbackToSpeech = (t: string | null) => {
-      if (t) {
-        const u = new SpeechSynthesisUtterance(t);
-        u.onend = () => setAppState("idle");
-        u.onerror = () => setAppState("idle");
-        window.speechSynthesis.speak(u);
+    setAppState("thinking");
+
+    const imageBase64 = frameRef.current;
+    if (!imageBase64) {
+      setResponseText("I couldn't capture an image. Please try again.");
+      setAppState("speaking");
+      const u = new SpeechSynthesisUtterance(
+        "I couldn't capture an image. Please try again."
+      );
+      u.onend = () => setAppState("idle");
+      window.speechSynthesis.speak(u);
+      return;
+    }
+
+    const history = historyRef.current;
+    const newHistory: Message[] = [
+      ...history,
+      { role: "user", content: transcript },
+    ];
+
+    try {
+      const response = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: imageBase64,
+          transcript,
+          history: newHistory.slice(-10),
+        }),
+      });
+
+      const contentType = response.headers.get("content-type");
+
+      if (contentType?.includes("audio/mpeg")) {
+        const blob = await response.blob();
+        const text = decodeURIComponent(
+          response.headers.get("X-Response-Text") || ""
+        );
+        historyRef.current = [
+          ...newHistory,
+          { role: "assistant", content: text },
+        ];
+        setResponseText(text || null);
+        setAppState("speaking");
+
+        // Play via the pre-unlocked audio element
+        const audio = audioRef.current;
+        if (audio) {
+          const url = URL.createObjectURL(blob);
+          audio.src = url;
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            setAppState("idle");
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(url);
+            speakFallback(text);
+          };
+          audio.play().catch(() => speakFallback(text));
+        } else {
+          speakFallback(text);
+        }
       } else {
-        setAppState("idle");
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        historyRef.current = [
+          ...newHistory,
+          { role: "assistant", content: data.text },
+        ];
+        setResponseText(data.text);
+        setAppState("speaking");
+        speakFallback(data.text);
       }
-    };
-
-    if (blob && audio) {
-      const url = URL.createObjectURL(blob);
-      audio.src = url;
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        setAppState("idle");
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        fallbackToSpeech(text);
-      };
-      audio.play().catch(() => fallbackToSpeech(text));
-    } else {
-      fallbackToSpeech(text);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : "Something went wrong";
+      setResponseText(msg);
+      setAppState("speaking");
+      speakFallback(msg);
     }
   }, []);
 
-  // Called by VoiceInput when user stops recording
-  const handleTranscript = useCallback(
-    async (transcript: string) => {
-      if (!transcript) {
-        setAppState("idle");
-        return;
-      }
-
-      setAppState("thinking");
-
-      const imageBase64 = frameRef.current;
-      if (!imageBase64) {
-        setAppState("speaking");
-        setResponseText("I couldn't capture an image. Please try again.");
-        playAudio(null, "I couldn't capture an image. Please try again.");
-        return;
-      }
-
-      const newHistory: Message[] = [
-        ...history,
-        { role: "user", content: transcript },
-      ];
-
-      try {
-        const response = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: imageBase64,
-            transcript,
-            history: newHistory.slice(-10),
-          }),
-        });
-
-        const contentType = response.headers.get("content-type");
-
-        if (contentType?.includes("audio/mpeg")) {
-          const blob = await response.blob();
-          const text = decodeURIComponent(
-            response.headers.get("X-Response-Text") || ""
-          );
-          setHistory([...newHistory, { role: "assistant", content: text }]);
-          setResponseText(text || null);
-          setAppState("speaking");
-          playAudio(blob, text || null);
-        } else {
-          const data = await response.json();
-          if (data.error) throw new Error(data.error);
-          setHistory([
-            ...newHistory,
-            { role: "assistant", content: data.text },
-          ]);
-          setResponseText(data.text);
-          setAppState("speaking");
-          playAudio(null, data.text);
-        }
-      } catch (error) {
-        console.error("Request failed:", error);
-        const errMsg = "Sorry, something went wrong. Please try again.";
-        setResponseText(errMsg);
-        setAppState("speaking");
-        playAudio(null, errMsg);
-      }
-    },
-    [history, playAudio]
-  );
+  // Browser TTS fallback
+  const speakFallback = useCallback((text: string | null) => {
+    if (text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.onend = () => setAppState("idle");
+      u.onerror = () => setAppState("idle");
+      window.speechSynthesis.speak(u);
+    } else {
+      setAppState("idle");
+    }
+  }, []);
 
   // Full-screen tap handler
   const handleScreenTap = useCallback(() => {
-    // Unlock <audio> element on every tap (Safari requires user gesture)
+    // Unlock audio on every tap (Safari requires user gesture)
     const audio = audioRef.current;
     if (audio) {
       audio.src = SILENT_WAV;
@@ -172,18 +216,45 @@ export default function Home() {
       // === STOP LISTENING ===
       playChime(440);
       setIsListening(false);
+
+      // Stop recognition
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        // Already stopped
+      }
+
+      // Grab transcript immediately — no async callback needed
+      const transcript = transcriptRef.current;
+      transcriptRef.current = "";
+
+      // Clear frame timeout if still pending
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
+
+      // Process the request
+      processRequest(transcript);
     } else {
       // === START LISTENING ===
       playChime(1200);
       setIsListening(true);
       setAppState("listening");
+
+      // Reset transcript
+      transcriptRef.current = "";
+
+      // Start speech recognition
+      try {
+        recognitionRef.current?.start();
+      } catch {
+        // Already started
+      }
+
       // Capture photo 500ms after tap — freezes the camera with flash
       frameTimeoutRef.current = setTimeout(() => {
         frameRef.current = cameraRef.current?.captureAndFreeze() || null;
       }, 500);
     }
-  }, [appState, isListening]);
+  }, [appState, isListening, processRequest]);
 
   return (
     <main className="fixed inset-0 bg-[#111]">
@@ -199,9 +270,6 @@ export default function Home() {
 
       {/* Pre-unlocked audio element for playback */}
       <audio ref={audioRef} className="hidden" playsInline />
-
-      {/* Speech recognition controller */}
-      <VoiceInput onTranscript={handleTranscript} isListening={isListening} />
 
       {/* Full-screen tap target */}
       <div
