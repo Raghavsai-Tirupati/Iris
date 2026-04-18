@@ -36,123 +36,12 @@ function playChime(freq: number) {
 function IntroScreen({
   onSelectMode,
   dismissing,
+  voiceListening,
 }: {
   onSelectMode: (mode: AppMode) => void;
   dismissing: boolean;
+  voiceListening: boolean;
 }) {
-  const selectedRef = useRef(false);
-  const [voiceListening, setVoiceListening] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    let recognition: SpeechRecognition | null = null;
-
-    const startListening = () => {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return;
-
-      recognition = new SR();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        if (selectedRef.current || cancelled) return;
-        let transcript = "";
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript + " ";
-        }
-        const lower = transcript.toLowerCase();
-        if (lower.includes("scene")) {
-          selectedRef.current = true;
-          try { recognition?.stop(); } catch { /* */ }
-          onSelectMode("scene");
-        } else if (lower.includes("read")) {
-          selectedRef.current = true;
-          try { recognition?.stop(); } catch { /* */ }
-          onSelectMode("read");
-        }
-      };
-
-      recognition.onend = () => {
-        if (!cancelled && !selectedRef.current) {
-          try { recognition?.start(); } catch { /* */ }
-        }
-      };
-
-      recognition.onerror = () => {};
-
-      try {
-        recognition.start();
-        setVoiceListening(true);
-      } catch { /* */ }
-    };
-
-    const doSpeak = (attempt = 0) => {
-      if (cancelled) return;
-      // Force-reset stuck speechSynthesis (common browser bug on reload)
-      window.speechSynthesis.cancel();
-
-      const u = new SpeechSynthesisUtterance(
-        "Welcome to SceneSpeak. Say scene mode or read mode to begin. You can also tap the screen."
-      );
-      u.rate = 1.8;
-      u.onend = () => {
-        if (!cancelled && !selectedRef.current) startListening();
-      };
-      u.onerror = () => {
-        // Retry once on error
-        if (!cancelled && attempt < 1) {
-          setTimeout(() => doSpeak(attempt + 1), 500);
-        }
-      };
-      window.speechSynthesis.speak(u);
-
-      // Chrome bug: utterance can silently fail. If after 3s nothing
-      // has spoken and we haven't been cancelled, force retry.
-      setTimeout(() => {
-        if (cancelled || selectedRef.current) return;
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
-        if (attempt < 2) doSpeak(attempt + 1);
-      }, 3000);
-    };
-
-    // Immediately cancel any leftover speech from prior page load
-    window.speechSynthesis.cancel();
-
-    const timer = setTimeout(() => {
-      // Warm up the engine with a silent utterance
-      const warmup = new SpeechSynthesisUtterance("");
-      window.speechSynthesis.speak(warmup);
-
-      setTimeout(() => {
-        if (cancelled) return;
-        if (window.speechSynthesis.getVoices().length > 0) {
-          doSpeak();
-        } else {
-          window.speechSynthesis.addEventListener("voiceschanged", () => doSpeak(), {
-            once: true,
-          });
-        }
-      }, 200);
-    }, 400);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      window.speechSynthesis.cancel();
-      try { recognition?.stop(); } catch { /* */ }
-    };
-  }, [onSelectMode]);
-
-  const unlockAudio = () => {
-    const a = document.createElement("audio");
-    a.src = SILENT_WAV;
-    a.play().then(() => a.pause()).catch(() => {});
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col overflow-hidden"
@@ -194,10 +83,7 @@ function IntroScreen({
 
         <button
           className="w-full py-6 text-left active:opacity-60 transition-opacity min-h-[44px]"
-          onClick={() => {
-            unlockAudio();
-            onSelectMode("scene");
-          }}
+          onClick={() => onSelectMode("scene")}
           aria-label="Scene Mode: Tap to ask questions about what the camera sees"
         >
           <div className="flex items-baseline justify-between">
@@ -218,10 +104,7 @@ function IntroScreen({
 
         <button
           className="w-full py-6 text-left active:opacity-60 transition-opacity min-h-[44px]"
-          onClick={() => {
-            unlockAudio();
-            onSelectMode("read");
-          }}
+          onClick={() => onSelectMode("read")}
           aria-label="Read Mode: Read any text the camera sees"
         >
           <div className="flex items-baseline justify-between">
@@ -364,13 +247,16 @@ export default function Home() {
   const historyRef = useRef<Message[]>([]);
   const sessionIdRef = useRef(0);
   const modeRef = useRef<AppMode>("scene");
+  const modeSelectedRef = useRef(false);
+  const modeListenRef = useRef<SpeechRecognition | null>(null);
 
-  const [screen, setScreen] = useState<"intro" | "dismissing" | "camera">("intro");
+  const [screen, setScreen] = useState<"tap" | "intro" | "dismissing" | "camera">("tap");
   const [mode, setMode] = useState<AppMode>("scene");
   const [appState, setAppState] = useState<AppState>("idle");
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
   const [sessionHistory, setSessionHistory] = useState<SessionEntry[]>([]);
+  const [voiceListening, setVoiceListening] = useState(false);
 
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
@@ -414,7 +300,11 @@ export default function Home() {
   // ── Mode selection from intro ─────────────────────────
   const handleSelectMode = useCallback(
     (selectedMode: AppMode) => {
-      if (screen !== "intro") return;
+      if (modeSelectedRef.current) return;
+      modeSelectedRef.current = true;
+      setVoiceListening(false);
+      try { modeListenRef.current?.stop(); } catch { /* */ }
+
       setMode(selectedMode);
       modeRef.current = selectedMode;
       window.speechSynthesis.cancel();
@@ -428,8 +318,46 @@ export default function Home() {
       setScreen("dismissing");
       setTimeout(() => setScreen("camera"), 400);
     },
-    [screen]
+    []
   );
+
+  // ── Start listening for voice mode selection ──────────
+  const startModeListening = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      if (modeSelectedRef.current) return;
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript + " ";
+      }
+      const lower = transcript.toLowerCase();
+      if (lower.includes("scene")) {
+        handleSelectMode("scene");
+      } else if (lower.includes("read")) {
+        handleSelectMode("read");
+      }
+    };
+
+    recognition.onend = () => {
+      if (!modeSelectedRef.current) {
+        try { recognition.start(); } catch { /* */ }
+      }
+    };
+    recognition.onerror = () => {};
+
+    modeListenRef.current = recognition;
+    try {
+      recognition.start();
+      setVoiceListening(true);
+    } catch { /* */ }
+  }, [handleSelectMode]);
 
   // ── Switch mode in camera view ────────────────────────
   const switchMode = useCallback(() => {
@@ -619,12 +547,85 @@ export default function Home() {
     }
   }, [appState, isListening, processRequest]);
 
+  const handleTapToStart = useCallback(() => {
+    // Unlock HTMLAudioElement with user gesture
+    const a = document.createElement("audio");
+    a.src = SILENT_WAV;
+    a.play().then(() => a.pause()).catch(() => {});
+    if (audioRef.current) {
+      audioRef.current.src = SILENT_WAV;
+      audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+    }
+
+    // Request microphone permission from user gesture context
+    navigator.mediaDevices?.getUserMedia({ audio: true })
+      .then(stream => stream.getTracks().forEach(t => t.stop()))
+      .catch(() => {});
+
+    // Speak welcome message directly from user gesture (required for mobile)
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(
+      "Welcome to SceneSpeak. Say scene mode or read mode to begin. You can also tap the screen."
+    );
+    u.rate = 1.8;
+    u.onend = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    u.onerror = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    window.speechSynthesis.speak(u);
+
+    setScreen("intro");
+  }, [startModeListening]);
+
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
-      {screen !== "camera" && (
+      {screen === "tap" && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer"
+          style={{ background: "#000000" }}
+          onClick={handleTapToStart}
+          onTouchStart={(e) => { e.preventDefault(); handleTapToStart(); }}
+          role="button"
+          tabIndex={0}
+          aria-label="Tap anywhere to start SceneSpeak"
+        >
+          <h1
+            className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight"
+            style={{ animation: "fadeInUp 0.5s ease-out" }}
+          >
+            SceneSpeak
+          </h1>
+          <p
+            className="text-[#808080] text-[15px] mt-6"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+          >
+            Tap anywhere to start
+          </p>
+          <div
+            className="mt-10 w-12 h-12 rounded-full border-2 border-[#333333] flex items-center justify-center"
+            style={{ animation: "breathe 2s ease-in-out infinite" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#666666]">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </div>
+          <p
+            className="text-[#555555] text-[12px] tracking-[0.15em] uppercase mt-auto mb-8"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
+          >
+            Hook &apos;Em Hacks 2026 &bull; UT Austin
+          </p>
+        </div>
+      )}
+
+      {(screen === "intro" || screen === "dismissing") && (
         <IntroScreen
           onSelectMode={handleSelectMode}
           dismissing={screen === "dismissing"}
+          voiceListening={voiceListening}
         />
       )}
 
