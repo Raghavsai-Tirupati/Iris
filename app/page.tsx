@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
 import VoiceInput from "@/components/VoiceInput";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -15,25 +15,21 @@ export default function Home() {
   const [fallbackText, setFallbackText] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
 
-  const playChime = useCallback(() => {
-    try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      gain.gain.value = 0.1;
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch {
-      // Chime is non-critical
-    }
+  // Welcome message on first load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(
+        "Welcome to SceneSpeak. Tap anywhere to ask a question."
+      );
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleTranscript = useCallback(
     async (transcript: string) => {
-      playChime();
       setAppState("thinking");
 
       // Capture current frame
@@ -63,7 +59,6 @@ export default function Home() {
         const contentType = response.headers.get("content-type");
 
         if (contentType?.includes("audio/mpeg")) {
-          // Got audio back from ElevenLabs
           const blob = await response.blob();
           const responseText = decodeURIComponent(
             response.headers.get("X-Response-Text") || ""
@@ -75,9 +70,7 @@ export default function Home() {
           setAudioBlob(blob);
           setFallbackText(responseText || null);
           setAppState("speaking");
-          playChime();
         } else {
-          // Fallback to browser TTS
           const data = await response.json();
           if (data.error) {
             throw new Error(data.error);
@@ -89,7 +82,6 @@ export default function Home() {
           setAudioBlob(null);
           setFallbackText(data.text);
           setAppState("speaking");
-          playChime();
         }
       } catch (error) {
         console.error("Request failed:", error);
@@ -98,7 +90,7 @@ export default function Home() {
         setAppState("speaking");
       }
     },
-    [history, playChime]
+    [history]
   );
 
   const handleAudioFinished = useCallback(() => {
@@ -107,24 +99,22 @@ export default function Home() {
     setAppState("idle");
   }, []);
 
-  const handleListeningChange = useCallback(
-    (listening: boolean) => {
-      setIsListening(listening);
-      if (listening) {
-        setAppState("listening");
-        playChime();
-      }
-    },
-    [playChime]
-  );
+  const handleListeningChange = useCallback((listening: boolean) => {
+    setIsListening(listening);
+    if (listening) {
+      setAppState("listening");
+    }
+  }, []);
+
+  const isBusy = appState === "thinking" || appState === "speaking";
 
   return (
     <main className="fixed inset-0 bg-[#111]">
       {/* Camera background */}
       <CameraFeed ref={cameraRef} />
 
-      {/* Status indicator */}
-      <StatusIndicator state={appState} />
+      {/* Status indicator with pulsing red dot */}
+      <StatusIndicator state={appState} isListening={isListening} />
 
       {/* Audio player */}
       <AudioPlayer
@@ -133,18 +123,13 @@ export default function Home() {
         onFinished={handleAudioFinished}
       />
 
-      {/* Bottom controls */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-12 gap-4">
-        <p className="text-white/60 text-sm" aria-hidden="true">
-          {isListening ? "Release to send" : "Hold to speak"}
-        </p>
-        <VoiceInput
-          onTranscript={handleTranscript}
-          isDisabled={appState === "thinking" || appState === "speaking"}
-          isListening={isListening}
-          onListeningChange={handleListeningChange}
-        />
-      </div>
+      {/* Voice input — registers full-screen tap handler */}
+      <VoiceInput
+        onTranscript={handleTranscript}
+        isDisabled={isBusy}
+        isListening={isListening}
+        onListeningChange={handleListeningChange}
+      />
     </main>
   );
 }

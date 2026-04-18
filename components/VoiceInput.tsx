@@ -9,6 +9,22 @@ interface VoiceInputProps {
   onListeningChange: (listening: boolean) => void;
 }
 
+function playChime(freq: number) {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.value = 0.15;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  } catch {
+    // Non-critical
+  }
+}
+
 export default function VoiceInput({
   onTranscript,
   isDisabled,
@@ -16,6 +32,12 @@ export default function VoiceInput({
   onListeningChange,
 }: VoiceInputProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const listeningRef = useRef(false);
+
+  // Keep ref in sync so callbacks always see latest value
+  useEffect(() => {
+    listeningRef.current = isListening;
+  }, [isListening]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -23,14 +45,19 @@ export default function VoiceInput({
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = "en-US";
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      onListeningChange(false);
-      onTranscript(transcript);
+      // Gather all results into one transcript
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (transcript.trim()) {
+        onTranscript(transcript.trim());
+      }
     };
 
     recognition.onerror = () => {
@@ -38,82 +65,53 @@ export default function VoiceInput({
     };
 
     recognition.onend = () => {
-      onListeningChange(false);
+      // If we're still supposed to be listening (continuous mode interrupted), restart
+      // Otherwise do nothing — toggle() handles the state
     };
 
     recognitionRef.current = recognition;
   }, [onTranscript, onListeningChange]);
 
-  const startListening = useCallback(() => {
+  const toggle = useCallback(() => {
     if (isDisabled || !recognitionRef.current) return;
-    try {
+
+    if (listeningRef.current) {
+      // Stop listening — low chime
+      playChime(440);
+      recognitionRef.current.stop();
+      onListeningChange(false);
+    } else {
+      // Start listening — high chime
+      playChime(1200);
       onListeningChange(true);
-      recognitionRef.current.start();
-    } catch {
-      // Already started
+      try {
+        recognitionRef.current.start();
+      } catch {
+        // Already started
+      }
     }
   }, [isDisabled, onListeningChange]);
 
-  const stopListening = useCallback(() => {
-    if (!recognitionRef.current) return;
-    try {
-      recognitionRef.current.stop();
-    } catch {
-      // Already stopped
-    }
-  }, []);
-
-  const handlePointerDown = () => {
-    startListening();
-  };
-
-  const handlePointerUp = () => {
-    stopListening();
-  };
-
-  return (
-    <button
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      disabled={isDisabled}
-      autoFocus
-      aria-label={
-        isListening
-          ? "Listening... Release to send"
-          : isDisabled
-            ? "Processing your request"
-            : "Hold to speak your question"
+  // Expose toggle as a click handler on the entire screen
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      // Prevent double-firing from touch + click
+      if (e.type === "touchstart") {
+        e.preventDefault();
       }
-      className={`
-        relative w-24 h-24 rounded-full border-4 transition-all duration-200
-        flex items-center justify-center
-        focus:outline-none focus:ring-4 focus:ring-white/50
-        ${
-          isDisabled
-            ? "bg-gray-600 border-gray-500 cursor-not-allowed opacity-50"
-            : isListening
-              ? "bg-red-500 border-red-300 scale-110"
-              : "bg-white/20 border-white/60 hover:bg-white/30 active:scale-95"
-        }
-      `}
-    >
-      {/* Pulsing ring when listening */}
-      {isListening && (
-        <span className="absolute inset-0 rounded-full border-4 border-red-300 animate-ping" />
-      )}
+      toggle();
+    };
 
-      {/* Mic icon */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="w-10 h-10 text-white"
-        aria-hidden="true"
-      >
-        <path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4Z" />
-        <path d="M6 10a1 1 0 0 0-2 0 8 8 0 0 0 7 7.93V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.07A8 8 0 0 0 20 10a1 1 0 1 0-2 0 6 6 0 0 1-12 0Z" />
-      </svg>
-    </button>
-  );
+    window.addEventListener("touchstart", handler, { passive: false });
+    window.addEventListener("click", handler);
+
+    return () => {
+      window.removeEventListener("touchstart", handler);
+      window.removeEventListener("click", handler);
+    };
+  }, [toggle]);
+
+  // This component renders no visible UI — the full screen is the tap target
+  // The pulsing red dot is rendered by StatusIndicator
+  return null;
 }
