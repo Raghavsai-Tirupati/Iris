@@ -27,7 +27,13 @@ function playChime(freq: number) {
 
 // ─── Intro Screen ───────────────────────────────────────────────────────────
 
-function IntroScreen({ onStart }: { onStart: () => void }) {
+function IntroScreen({
+  onStart,
+  dismissing,
+}: {
+  onStart: () => void;
+  dismissing: boolean;
+}) {
   useEffect(() => {
     const timer = setTimeout(() => {
       const u = new SpeechSynthesisUtterance(
@@ -41,11 +47,10 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
-        backgroundSize: "400% 400%",
-        animation: "gradientShift 8s ease infinite",
+        background: "#050510",
+        animation: dismissing ? "fadeOut 0.5s ease-out forwards" : undefined,
       }}
       onClick={onStart}
       onTouchStart={(e) => {
@@ -56,38 +61,105 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
       tabIndex={0}
       aria-label="Tap anywhere to begin using SceneSpeak"
     >
-      {/* Logo */}
-      <h1
-        className="text-white text-6xl font-bold tracking-tight"
-        style={{ animation: "fadeInUp 0.8s ease-out" }}
-      >
-        SceneSpeak
-      </h1>
+      {/* Floating gradient orbs */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "500px",
+          height: "500px",
+          top: "-15%",
+          left: "-20%",
+          background:
+            "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+          animation: "orbFloat1 12s ease-in-out infinite",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "450px",
+          height: "450px",
+          bottom: "-10%",
+          right: "-15%",
+          background:
+            "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
+          animation: "orbFloat2 14s ease-in-out infinite",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "300px",
+          height: "300px",
+          top: "35%",
+          right: "5%",
+          background:
+            "radial-gradient(circle, rgba(79,70,229,0.1) 0%, transparent 70%)",
+          animation: "orbFloat3 10s ease-in-out infinite",
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Tagline */}
-      <p
-        className="text-white/70 text-xl mt-3"
-        style={{ animation: "fadeInUp 0.8s ease-out 0.2s both" }}
-      >
-        Your AI-powered visual guide
-      </p>
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Logo */}
+        <h1
+          className="text-7xl font-bold tracking-tight"
+          style={{
+            animation: "fadeInUp 1s ease-out",
+            background: "linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #818cf8 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          SceneSpeak
+        </h1>
 
-      {/* Tap prompt */}
-      <p
-        className="text-white/40 text-base mt-16"
-        style={{ animation: "pulse-slow 2.5s ease-in-out infinite" }}
-      >
-        Tap anywhere to begin
-      </p>
+        {/* Divider line */}
+        <div
+          className="w-12 h-px mt-5"
+          style={{
+            background:
+              "linear-gradient(to right, transparent, rgba(167,139,250,0.5), transparent)",
+            animation: "fadeInUp 1s ease-out 0.15s both",
+          }}
+        />
+
+        {/* Tagline */}
+        <p
+          className="text-white/50 text-lg mt-5 font-light tracking-wide"
+          style={{ animation: "fadeInUp 1s ease-out 0.25s both" }}
+        >
+          Your AI-powered visual guide
+        </p>
+
+        {/* Tap prompt */}
+        <p
+          className="text-white/25 text-sm mt-20 tracking-widest uppercase font-medium"
+          style={{ animation: "pulse-glow 3s ease-in-out infinite" }}
+        >
+          Tap anywhere to begin
+        </p>
+      </div>
 
       {/* Hackathon credit */}
-      <p
-        className="absolute bottom-10 text-white/30 text-xs text-center px-4"
-        style={{ animation: "fadeInUp 0.8s ease-out 0.5s both" }}
+      <div
+        className="absolute bottom-10 flex flex-col items-center gap-2"
+        style={{ animation: "fadeInUp 1s ease-out 0.6s both" }}
       >
-        Built for Hook &apos;Em Hacks 2026 &mdash; Multimodal Search &amp;
-        Generation
-      </p>
+        <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-1.5">
+          <span className="text-white/25 text-xs tracking-wide">
+            Hook &apos;Em Hacks 2026
+          </span>
+          <span className="w-1 h-1 rounded-full bg-white/15" />
+          <span className="text-white/25 text-xs tracking-wide">
+            Multimodal Search &amp; Generation
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -104,7 +176,9 @@ export default function Home() {
   const isListeningRef = useRef(false);
   const historyRef = useRef<Message[]>([]);
 
-  const [showIntro, setShowIntro] = useState(true);
+  const [introState, setIntroState] = useState<
+    "visible" | "dismissing" | "hidden"
+  >("visible");
   const [appState, setAppState] = useState<AppState>("idle");
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
@@ -158,6 +232,8 @@ export default function Home() {
 
   // Dismiss intro and enter the app
   const handleIntroTap = useCallback(() => {
+    if (introState !== "visible") return;
+
     // Unlock audio during this user gesture
     const audio = audioRef.current;
     if (audio) {
@@ -167,8 +243,10 @@ export default function Home() {
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
 
-    setShowIntro(false);
-  }, []);
+    // Start fade-out, then hide
+    setIntroState("dismissing");
+    setTimeout(() => setIntroState("hidden"), 500);
+  }, [introState]);
 
   // Process the transcript: call Gemini API then play audio response
   const processRequest = useCallback(async (transcript: string) => {
@@ -332,13 +410,18 @@ export default function Home() {
   return (
     <main className="fixed inset-0 bg-[#111]">
       {/* Intro screen — shown once per session */}
-      {showIntro && <IntroScreen onStart={handleIntroTap} />}
+      {introState !== "hidden" && (
+        <IntroScreen
+          onStart={handleIntroTap}
+          dismissing={introState === "dismissing"}
+        />
+      )}
 
       {/* Camera feed (live or frozen) */}
       <CameraFeed ref={cameraRef} />
 
       {/* Status indicator + response text */}
-      {!showIntro && (
+      {introState === "hidden" && (
         <StatusIndicator
           state={appState}
           isListening={isListening}
@@ -350,7 +433,7 @@ export default function Home() {
       <audio ref={audioRef} className="hidden" playsInline />
 
       {/* Full-screen tap target (only active after intro dismissed) */}
-      {!showIntro && (
+      {introState === "hidden" && (
         <div
           className="fixed inset-0 z-40"
           onClick={handleScreenTap}

@@ -90,10 +90,12 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
   if (error) {
     return (
       <div
-        className="fixed inset-0 bg-[#111] flex items-center justify-center p-8"
+        className="fixed inset-0 bg-[#050510] flex items-center justify-center p-8"
         role="alert"
       >
-        <p className="text-white text-xl text-center">{error}</p>
+        <p className="text-white/70 text-lg text-center leading-relaxed">
+          {error}
+        </p>
       </div>
     );
   }
@@ -120,6 +122,36 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
           aria-hidden="true"
         />
       )}
+
+      {/* Vignette overlay — always on top of camera/frozen image */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)",
+        }}
+      />
+
+      {/* Bottom gradient for text readability */}
+      <div
+        className="fixed bottom-0 left-0 right-0 h-40 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)",
+        }}
+      />
+
+      {/* Top gradient */}
+      <div
+        className="fixed top-0 left-0 right-0 h-28 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)",
+        }}
+      />
 
       {/* Camera flash effect */}
       {showFlash && (
