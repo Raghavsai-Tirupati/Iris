@@ -4,11 +4,13 @@ export interface Message {
 }
 
 export type AppState = "idle" | "listening" | "thinking" | "speaking";
+export type AppMode = "scene" | "read";
 
 export interface AskRequest {
   image: string;
   transcript: string;
   history: Message[];
+  mode?: AppMode;
 }
 
 export interface SessionEntry {

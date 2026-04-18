@@ -3,10 +3,17 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
 import StatusIndicator from "@/components/StatusIndicator";
-import { AppState, Message, SessionEntry } from "@/lib/types";
+import { AppState, AppMode, Message, SessionEntry } from "@/lib/types";
 
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+function speakText(text: string, rate = 1.8) {
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = rate;
+  window.speechSynthesis.speak(u);
+}
 
 function playChime(freq: number) {
   try {
@@ -27,116 +34,141 @@ function playChime(freq: number) {
 // ─── Intro Screen ───────────────────────────────────────────────────────────
 
 function IntroScreen({
-  onStart,
+  onSelectMode,
   dismissing,
 }: {
-  onStart: () => void;
+  onSelectMode: (mode: AppMode) => void;
   dismissing: boolean;
 }) {
   useEffect(() => {
     let cancelled = false;
-    let repeatTimer: ReturnType<typeof setInterval> | null = null;
 
-    const speak = () => {
+    const doSpeak = () => {
       if (cancelled) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(
-        "Welcome to SceneSpeak. Tap anywhere to begin."
+        "Welcome to SceneSpeak. Choose a mode to begin."
       );
       u.rate = 1.8;
       window.speechSynthesis.speak(u);
     };
 
-    const init = () => {
-      if (cancelled) return;
+    const timer = setTimeout(() => {
       if (window.speechSynthesis.getVoices().length > 0) {
-        speak();
+        doSpeak();
       } else {
-        window.speechSynthesis.addEventListener("voiceschanged", speak, {
+        window.speechSynthesis.addEventListener("voiceschanged", doSpeak, {
           once: true,
         });
       }
-      repeatTimer = setInterval(() => {
-        if (cancelled) return;
-        const u = new SpeechSynthesisUtterance("Tap anywhere to begin.");
-        u.rate = 1.8;
-        window.speechSynthesis.speak(u);
-      }, 8000);
-    };
-
-    const timer = setTimeout(init, 600);
+    }, 600);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      if (repeatTimer) clearInterval(repeatTimer);
-      window.speechSynthesis.removeEventListener("voiceschanged", speak);
+      window.speechSynthesis.removeEventListener("voiceschanged", doSpeak);
       window.speechSynthesis.cancel();
     };
   }, []);
 
+  const unlockAudio = () => {
+    const a = document.createElement("audio");
+    a.src = SILENT_WAV;
+    a.play().then(() => a.pause()).catch(() => {});
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 cursor-pointer"
+      className="fixed inset-0 z-50 flex flex-col"
       style={{
-        background: "#0f0f0f",
+        background: "#111",
         animation: dismissing ? "fadeOut 0.4s ease-out forwards" : undefined,
       }}
-      onClick={onStart}
-      onTouchStart={(e) => {
-        e.preventDefault();
-        onStart();
-      }}
-      role="button"
-      tabIndex={0}
-      aria-label="Tap anywhere to begin using SceneSpeak"
     >
-      {/* Center content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-10">
-        <div
-          className="w-20 h-20 rounded-full bg-white/[0.05] flex items-center justify-center mb-8"
-          style={{ animation: "fadeInUp 0.5s ease-out" }}
-        >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/50">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </div>
+      <div className="flex-1 min-h-0" />
 
-        <h1
-          className="text-white text-[28px] font-semibold"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
-        >
+      {/* Logo */}
+      <div
+        className="flex flex-col items-center px-8"
+        style={{ animation: "fadeInUp 0.5s ease-out" }}
+      >
+        <h1 className="text-white text-[32px] font-semibold tracking-tight">
           SceneSpeak
         </h1>
-
-        <p
-          className="text-white/40 text-[15px] mt-2"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
-        >
-          Your AI visual assistant
+        <p className="text-white/40 text-[15px] mt-2">
+          Your AI-powered visual guide
         </p>
-
-        <div
-          className="mt-16 bg-white/[0.06] rounded-full px-6 py-3"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
-        >
-          <p className="text-white/40 text-sm">
-            Tap anywhere to begin
-          </p>
-        </div>
       </div>
 
-      {/* Bottom info */}
+      {/* Mode buttons */}
       <div
-        className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-1"
-        style={{ animation: "fadeInUp 0.5s ease-out 0.3s both" }}
+        className="flex flex-col gap-3 px-8 mt-12"
+        style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+      >
+        {/* Scene Mode */}
+        <button
+          className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.04] p-5 text-left active:bg-white/[0.08] transition-colors"
+          onClick={() => {
+            unlockAudio();
+            onSelectMode("scene");
+          }}
+          aria-label="Scene Mode: Tap to ask questions about what the camera sees"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-white text-[16px] font-medium">Scene Mode</p>
+              <p className="text-white/35 text-[13px] mt-0.5">
+                Ask about what you see
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* Read Mode */}
+        <button
+          className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.04] p-5 text-left active:bg-white/[0.08] transition-colors"
+          onClick={() => {
+            unlockAudio();
+            onSelectMode("read");
+          }}
+          aria-label="Read Mode: Read any text the camera sees"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl border border-white/[0.12] bg-white/[0.04] flex items-center justify-center flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-white text-[16px] font-medium">Read Mode</p>
+              <p className="text-white/35 text-[13px] mt-0.5">
+                Read text from signs, menus, documents
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0" />
+
+      {/* Bottom */}
+      <div
+        className="flex flex-col items-center pb-8"
+        style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
       >
         <p className="text-white/20 text-[11px]">
-          Hook &apos;Em Hacks 2026
-        </p>
-        <p className="text-white/15 text-[10px]">
-          Multimodal Search &amp; Generation
+          Hook &apos;Em Hacks 2026 &bull; UT Austin
         </p>
       </div>
     </div>
@@ -155,19 +187,19 @@ export default function Home() {
   const isListeningRef = useRef(false);
   const historyRef = useRef<Message[]>([]);
   const sessionIdRef = useRef(0);
+  const modeRef = useRef<AppMode>("scene");
 
-  const [introState, setIntroState] = useState<
-    "visible" | "dismissing" | "hidden"
-  >("visible");
+  const [screen, setScreen] = useState<"intro" | "dismissing" | "camera">("intro");
+  const [mode, setMode] = useState<AppMode>("scene");
   const [appState, setAppState] = useState<AppState>("idle");
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
   const [sessionHistory, setSessionHistory] = useState<SessionEntry[]>([]);
 
-  useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
 
+  // ── Speech recognition setup ──────────────────────────
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
@@ -187,11 +219,7 @@ export default function Home() {
 
     recognition.onend = () => {
       if (isListeningRef.current) {
-        try {
-          recognition.start();
-        } catch {
-          // Already running
-        }
+        try { recognition.start(); } catch { /* already running */ }
       }
     };
 
@@ -199,6 +227,7 @@ export default function Home() {
     recognitionRef.current = recognition;
   }, []);
 
+  // ── Reset on idle ─────────────────────────────────────
   useEffect(() => {
     if (appState === "idle") {
       cameraRef.current?.unfreeze();
@@ -206,19 +235,35 @@ export default function Home() {
     }
   }, [appState]);
 
-  const handleIntroTap = useCallback(() => {
-    if (introState !== "visible") return;
-    const audio = audioRef.current;
-    if (audio) {
-      audio.src = SILENT_WAV;
-      audio.play().then(() => audio.pause()).catch(() => {});
-    }
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-    setIntroState("dismissing");
-    setTimeout(() => setIntroState("hidden"), 400);
-  }, [introState]);
+  // ── Mode selection from intro ─────────────────────────
+  const handleSelectMode = useCallback(
+    (selectedMode: AppMode) => {
+      if (screen !== "intro") return;
+      setMode(selectedMode);
+      modeRef.current = selectedMode;
+      window.speechSynthesis.cancel();
 
+      if (selectedMode === "scene") {
+        speakText("Scene mode. Tap anywhere to ask about what you see.");
+      } else {
+        speakText("Read mode. Tap anywhere and I'll read any text in view.");
+      }
+
+      setScreen("dismissing");
+      setTimeout(() => setScreen("camera"), 400);
+    },
+    [screen]
+  );
+
+  // ── Switch mode in camera view ────────────────────────
+  const switchMode = useCallback(() => {
+    const newMode = modeRef.current === "scene" ? "read" : "scene";
+    setMode(newMode);
+    modeRef.current = newMode;
+    speakText(newMode === "scene" ? "Switched to scene mode." : "Switched to read mode.");
+  }, []);
+
+  // ── Speak fallback ────────────────────────────────────
   const speakFallback = useCallback((text: string | null) => {
     if (text) {
       const u = new SpeechSynthesisUtterance(text);
@@ -231,6 +276,7 @@ export default function Home() {
     }
   }, []);
 
+  // ── Replay entry ──────────────────────────────────────
   const replayEntry = useCallback(
     (entry: SessionEntry) => {
       if (appState === "thinking" || appState === "speaking") return;
@@ -246,6 +292,7 @@ export default function Home() {
     [appState]
   );
 
+  // ── Add session entry ─────────────────────────────────
   const addSessionEntry = useCallback(
     (thumbnail: string, question: string, answer: string) => {
       setSessionHistory((prev) => [
@@ -262,8 +309,15 @@ export default function Home() {
     []
   );
 
+  // ── Process request ───────────────────────────────────
   const processRequest = useCallback(
     async (transcript: string) => {
+      const currentMode = modeRef.current;
+
+      // In read mode, allow empty transcript (user just double-taps to read)
+      if (!transcript && currentMode === "read") {
+        transcript = "Read all visible text.";
+      }
       if (!transcript) {
         setAppState("idle");
         return;
@@ -298,6 +352,7 @@ export default function Home() {
             image: imageBase64,
             transcript,
             history: newHistory.slice(-10),
+            mode: currentMode,
           }),
         });
 
@@ -356,6 +411,7 @@ export default function Home() {
     [speakFallback, addSessionEntry]
   );
 
+  // ── Screen tap handler ────────────────────────────────
   const handleScreenTap = useCallback(() => {
     const audio = audioRef.current;
     if (audio) {
@@ -370,11 +426,7 @@ export default function Home() {
     if (isListening) {
       playChime(440);
       setIsListening(false);
-      try {
-        recognitionRef.current?.stop();
-      } catch {
-        // Already stopped
-      }
+      try { recognitionRef.current?.stop(); } catch { /* */ }
       const transcript = transcriptRef.current;
       transcriptRef.current = "";
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
@@ -384,11 +436,7 @@ export default function Home() {
       setIsListening(true);
       setAppState("listening");
       transcriptRef.current = "";
-      try {
-        recognitionRef.current?.start();
-      } catch {
-        // Already started
-      }
+      try { recognitionRef.current?.start(); } catch { /* */ }
       frameTimeoutRef.current = setTimeout(() => {
         frameRef.current = cameraRef.current?.captureAndFreeze() || null;
       }, 500);
@@ -397,28 +445,30 @@ export default function Home() {
 
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
-      {introState !== "hidden" && (
+      {screen !== "camera" && (
         <IntroScreen
-          onStart={handleIntroTap}
-          dismissing={introState === "dismissing"}
+          onSelectMode={handleSelectMode}
+          dismissing={screen === "dismissing"}
         />
       )}
 
       <CameraFeed ref={cameraRef} />
 
-      {introState === "hidden" && (
+      {screen === "camera" && (
         <StatusIndicator
           state={appState}
+          mode={mode}
           isListening={isListening}
           responseText={responseText}
           sessionHistory={sessionHistory}
           onReplayEntry={replayEntry}
+          onSwitchMode={switchMode}
         />
       )}
 
       <audio ref={audioRef} className="hidden" playsInline />
 
-      {introState === "hidden" && (
+      {screen === "camera" && (
         <div
           className="fixed inset-0 z-40"
           onClick={handleScreenTap}
@@ -435,7 +485,9 @@ export default function Home() {
                 ? "Analyzing your question"
                 : appState === "speaking"
                   ? "Playing response"
-                  : "Tap anywhere to start speaking your question"
+                  : mode === "scene"
+                    ? "Tap anywhere to start speaking your question"
+                    : "Tap anywhere to read text in view"
           }
         />
       )}

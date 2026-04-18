@@ -6,7 +6,7 @@ import { AskRequest } from "@/lib/types";
 export async function POST(request: NextRequest) {
   try {
     const body: AskRequest = await request.json();
-    const { image, transcript, history } = body;
+    const { image, transcript, history, mode } = body;
 
     if (!image || !transcript) {
       return NextResponse.json(
@@ -15,10 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Get response from Gemini
-    const responseText = await askGemini(image, transcript, history || []);
+    const responseText = await askGemini(image, transcript, history || [], mode || "scene");
 
-    // 2. Try to convert to speech via ElevenLabs
     try {
       const audioBuffer = await synthesizeSpeech(responseText);
       return new NextResponse(audioBuffer, {
@@ -29,7 +27,6 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (ttsError) {
-      // Fallback: return text for browser TTS
       console.error("TTS failed, falling back to browser speech:", ttsError);
       return NextResponse.json({
         text: responseText,
