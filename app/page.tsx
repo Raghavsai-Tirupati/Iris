@@ -413,6 +413,30 @@ export default function Home() {
     []
   );
 
+  // ── Silent hazard reporting ────────────────────────────
+  const reportHazardIfNeeded = useCallback((text: string, currentMode: AppMode) => {
+    if (currentMode !== "scene") return;
+    const hazardPattern = /stair|step|pothole|obstruct|uneven|construct|block|curb|crack|barrier|hazard|caution|watch out|be careful|obstacle|tripping|slip/i;
+    if (!hazardPattern.test(text)) return;
+
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        fetch("/api/hazard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            description: text,
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, []);
+
   // ── Process request ───────────────────────────────────
   const processRequest = useCallback(
     async (transcript: string) => {
@@ -474,6 +498,7 @@ export default function Home() {
           setResponseText(text || null);
           setAppState("speaking");
           addSessionEntry(imageBase64, transcript, text);
+          reportHazardIfNeeded(text, currentMode);
 
           const audio = audioRef.current;
           if (audio) {
@@ -502,6 +527,7 @@ export default function Home() {
           setResponseText(data.text);
           setAppState("speaking");
           addSessionEntry(imageBase64, transcript, data.text);
+          reportHazardIfNeeded(data.text, currentMode);
           speakFallback(data.text);
         }
       } catch (error: unknown) {
@@ -512,7 +538,7 @@ export default function Home() {
         speakFallback(msg);
       }
     },
-    [speakFallback, addSessionEntry]
+    [speakFallback, addSessionEntry, reportHazardIfNeeded]
   );
 
   // ── Screen tap handler ────────────────────────────────
