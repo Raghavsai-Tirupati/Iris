@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
 import StatusIndicator from "@/components/StatusIndicator";
-import { AppState, AppMode, Message } from "@/lib/types";
+import { AppState, AppMode } from "@/lib/types";
 
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
@@ -41,7 +41,6 @@ export default function Home() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef("");
   const isListeningRef = useRef(false);
-  const historyRef = useRef<Message[]>([]);
   const modeRef = useRef<AppMode>("scene");
   const audioUnlockedRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,7 +68,7 @@ export default function Home() {
     if (!SR) return;
 
     const recognition = new SR();
-    recognition.continuous = true;
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
@@ -81,12 +80,7 @@ export default function Home() {
       transcriptRef.current = text.trim();
     };
 
-    recognition.onend = () => {
-      if (isListeningRef.current) {
-        try { recognition.start(); } catch { /* already running */ }
-      }
-    };
-
+    recognition.onend = () => {};
     recognition.onerror = () => {};
     recognitionRef.current = recognition;
   }, []);
@@ -208,12 +202,6 @@ export default function Home() {
         return;
       }
 
-      const history = historyRef.current;
-      const newHistory: Message[] = [
-        ...history,
-        { role: "user", content: transcript },
-      ];
-
       try {
         const response = await fetch("/api/ask", {
           method: "POST",
@@ -221,7 +209,7 @@ export default function Home() {
           body: JSON.stringify({
             image: imageBase64,
             transcript,
-            history: newHistory.slice(-10),
+            history: [],
             mode: currentMode,
           }),
         });
@@ -233,10 +221,6 @@ export default function Home() {
           const text = decodeURIComponent(
             response.headers.get("X-Response-Text") || ""
           );
-          historyRef.current = [
-            ...newHistory,
-            { role: "assistant", content: text },
-          ];
           setResponseText(text || null);
           setAppState("speaking");
           reportHazardIfNeeded(text, currentMode);
@@ -261,10 +245,6 @@ export default function Home() {
         } else {
           const data = await response.json();
           if (data.error) throw new Error(data.error);
-          historyRef.current = [
-            ...newHistory,
-            { role: "assistant", content: data.text },
-          ];
           setResponseText(data.text);
           setAppState("speaking");
           reportHazardIfNeeded(data.text, currentMode);
@@ -283,15 +263,15 @@ export default function Home() {
 
   // ── Screen tap handler ────────────────────────────────
   const handleScreenTap = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.src = SILENT_WAV;
-      audio.play().then(() => audio.pause()).catch(() => {});
+    // If speaking/thinking, stop everything and reset to idle
+    if (appState === "speaking") {
+      window.speechSynthesis.cancel();
+      const audio = audioRef.current;
+      if (audio) { audio.pause(); audio.src = ""; }
+      setAppState("idle");
+      return;
     }
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-
-    const isBusy = appState === "thinking" || appState === "speaking";
-    if (isBusy) return;
+    if (appState === "thinking") return;
 
     if (isListening) {
       // Second tap — stop listening and send
@@ -304,17 +284,25 @@ export default function Home() {
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
       processRequest(transcript);
     } else {
-      // First tap — clear old response, start listening + 3s silence auto-send
+      // First tap — kill any leftover state, start fresh
+      window.speechSynthesis.cancel();
       playChime(1200);
       setResponseText(null);
       frameRef.current = null;
+      transcriptRef.current = "";
       setIsListening(true);
       setAppState("listening");
-      transcriptRef.current = "";
-      try { recognitionRef.current?.start(); } catch { /* */ }
+
+      // Capture frame after short delay
       frameTimeoutRef.current = setTimeout(() => {
         frameRef.current = cameraRef.current?.capture() || null;
       }, 500);
+
+      // Start speech recognition fresh
+      try { recognitionRef.current?.stop(); } catch { /* */ }
+      setTimeout(() => {
+        try { recognitionRef.current?.start(); } catch { /* */ }
+      }, 100);
 
       // Auto-send after 3s if no speech detected
       silenceTimerRef.current = setTimeout(() => {
