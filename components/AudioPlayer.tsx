@@ -18,7 +18,7 @@ export default function AudioPlayer({
   const speakFallback = useCallback(
     (text: string) => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.8;
+      utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.onend = onFinished;
       utterance.onerror = onFinished;

@@ -19,7 +19,7 @@ interface Hazard {
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
-function speakText(text: string, rate = 1.8) {
+function speakText(text: string, rate = 1.0) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = rate;
@@ -151,7 +151,7 @@ export default function Home() {
     const u = new SpeechSynthesisUtterance(
       "Welcome to SceneSpeak. Say scene mode or read mode to begin."
     );
-    u.rate = 1.8;
+    u.rate = 1.0;
     window.speechSynthesis.speak(u);
 
     setAudioReady(true);
@@ -233,7 +233,7 @@ export default function Home() {
   const speakFallback = useCallback((text: string | null) => {
     if (text) {
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.8;
+      u.rate = 1.0;
       u.onend = () => setAppState("idle");
       u.onerror = () => setAppState("idle");
       window.speechSynthesis.speak(u);
@@ -288,7 +288,7 @@ export default function Home() {
         const u = new SpeechSynthesisUtterance(
           "I couldn't capture an image. Please try again."
         );
-        u.rate = 1.8;
+        u.rate = 1.0;
         u.onend = () => setAppState("idle");
         window.speechSynthesis.speak(u);
         return;
@@ -331,7 +331,7 @@ export default function Home() {
           if (audio) {
             const url = URL.createObjectURL(blob);
             audio.src = url;
-            audio.playbackRate = 1.4;
+            audio.playbackRate = 1.0;
             audio.onended = () => {
               URL.revokeObjectURL(url);
               setAppState("idle");
