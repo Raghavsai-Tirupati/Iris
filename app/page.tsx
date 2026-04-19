@@ -42,209 +42,6 @@ function playChime(freq: number) {
   }
 }
 
-// ─── Intro Screen ───────────────────────────────────────────────────────────
-
-function IntroScreen({
-  onSelectMode,
-  dismissing,
-  voiceListening,
-}: {
-  onSelectMode: (mode: AppMode) => void;
-  dismissing: boolean;
-  voiceListening: boolean;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
-      style={{
-        background: "#000000",
-        animation: dismissing ? "fadeOut 0.4s ease-out forwards" : undefined,
-      }}
-    >
-      {/* ── Text content — left aligned, editorial ────── */}
-      <div className="relative z-10 flex flex-col px-8 pt-20 sm:pt-28">
-        <h1
-          className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight"
-          style={{ animation: "fadeInUp 0.5s ease-out" }}
-        >
-          SceneSpeak
-        </h1>
-
-        <p
-          className="text-white text-[22px] sm:text-[26px] leading-snug mt-4 max-w-[320px]"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
-        >
-          AI-powered visual guide for the world around you
-        </p>
-
-        <p
-          className="text-[#808080] text-[12px] tracking-[0.2em] uppercase mt-6"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
-        >
-          Your eyes, amplified
-        </p>
-      </div>
-
-      {/* ── Mode options — typography only ──────────── */}
-      <div
-        className="relative z-10 flex flex-col px-8 mt-12"
-        style={{ animation: "fadeInUp 0.5s ease-out 0.15s both" }}
-      >
-        <div className="w-full h-px bg-[#222222]" />
-
-        <button
-          className="w-full py-6 text-left active:opacity-60 transition-opacity min-h-[44px]"
-          onClick={() => onSelectMode("scene")}
-          aria-label="Scene Mode: Tap to ask questions about what the camera sees"
-        >
-          <div className="flex items-baseline justify-between">
-            <div>
-              <p className="text-white text-[24px] sm:text-[28px] font-medium">
-                <span className="text-[#4FC3F7]">01</span>
-                <span className="ml-4">Scene Mode</span>
-              </p>
-              <p className="text-[#666666] text-[14px] mt-1 ml-[52px]">
-                Ask about what you see
-              </p>
-            </div>
-            <span className="text-[#333333] text-[24px] font-light">&rarr;</span>
-          </div>
-        </button>
-
-        <div className="w-full h-px bg-[#222222]" />
-
-        <button
-          className="w-full py-6 text-left active:opacity-60 transition-opacity min-h-[44px]"
-          onClick={() => onSelectMode("read")}
-          aria-label="Read Mode: Read any text the camera sees"
-        >
-          <div className="flex items-baseline justify-between">
-            <div>
-              <p className="text-white text-[24px] sm:text-[28px] font-medium">
-                <span className="text-[#81C784]">02</span>
-                <span className="ml-4">Read Mode</span>
-              </p>
-              <p className="text-[#666666] text-[14px] mt-1 ml-[52px]">
-                Read signs, menus, documents
-              </p>
-            </div>
-            <span className="text-[#333333] text-[24px] font-light">&rarr;</span>
-          </div>
-        </button>
-
-        <div className="w-full h-px bg-[#222222]" />
-
-        {/* Voice listening indicator */}
-        {voiceListening && (
-          <div className="flex items-center gap-2 mt-5">
-            <span
-              className="w-2 h-2 rounded-full bg-[#EF5350]"
-              style={{ animation: "breathe 2s ease-in-out infinite" }}
-            />
-            <span className="text-[#666666] text-[13px]">
-              Listening — say a mode, or tap to choose
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Geometric shapes — decorative ─────────────── */}
-      <div className="absolute bottom-0 left-0 right-0 h-[40%] pointer-events-none overflow-hidden" aria-hidden="true">
-        {/* Green semicircle */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 220,
-            height: 220,
-            background: "#4ADE80",
-            bottom: -60,
-            left: "15%",
-          }}
-        />
-        {/* Pink diagonal bars */}
-        <div className="absolute" style={{ bottom: 80, left: -20, transform: "rotate(-35deg)" }}>
-          <div className="w-[140px] h-[8px] bg-[#F472B6] rounded-full mb-3" />
-          <div className="w-[100px] h-[8px] bg-[#F472B6] rounded-full mb-3" />
-          <div className="w-[120px] h-[8px] bg-[#F472B6] rounded-full" />
-        </div>
-        {/* Yellow rectangle */}
-        <div
-          className="absolute rounded-lg"
-          style={{
-            width: 50,
-            height: 100,
-            background: "#FACC15",
-            bottom: 40,
-            right: "35%",
-          }}
-        >
-          <div className="w-5 h-5 rounded-full bg-black mt-5 mx-auto" />
-        </div>
-        {/* Cyan bar */}
-        <div
-          className="absolute rounded-sm"
-          style={{
-            width: 14,
-            height: 120,
-            background: "#22D3EE",
-            bottom: 20,
-            right: "22%",
-          }}
-        />
-        {/* Magenta triangle */}
-        <div
-          className="absolute"
-          style={{
-            width: 0,
-            height: 0,
-            borderLeft: "35px solid transparent",
-            borderRight: "35px solid transparent",
-            borderBottom: "60px solid #E879F9",
-            bottom: 100,
-            right: "12%",
-            transform: "rotate(30deg)",
-          }}
-        />
-        {/* Blue arch */}
-        <div
-          className="absolute rounded-t-full"
-          style={{
-            width: 100,
-            height: 50,
-            border: "18px solid #60A5FA",
-            borderBottom: "none",
-            background: "transparent",
-            bottom: -5,
-            right: -10,
-          }}
-        />
-        {/* Small blue circle */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 30,
-            height: 30,
-            background: "#60A5FA",
-            bottom: 110,
-            left: "30%",
-          }}
-        />
-      </div>
-
-      {/* ── Footer ────────────────────────────────────── */}
-      <div className="flex-1 min-h-0" />
-      <div
-        className="relative z-10 flex flex-col items-start px-8 pb-8"
-        style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
-      >
-        <p className="text-[#555555] text-[12px] tracking-[0.15em] uppercase">
-          Hook &apos;Em Hacks 2026 &bull; UT Austin
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main App ───────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -259,14 +56,16 @@ export default function Home() {
   const modeRef = useRef<AppMode>("scene");
   const modeSelectedRef = useRef(false);
   const modeListenRef = useRef<SpeechRecognition | null>(null);
+  const audioUnlockedRef = useRef(false);
 
-  const [screen, setScreen] = useState<"tap" | "intro" | "dismissing" | "camera">("tap");
+  const [screen, setScreen] = useState<"landing" | "dismissing" | "camera">("landing");
   const [mode, setMode] = useState<AppMode>("scene");
   const [appState, setAppState] = useState<AppState>("idle");
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
   const [voiceListening, setVoiceListening] = useState(false);
   const [landingHazards, setLandingHazards] = useState<Hazard[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
@@ -276,6 +75,14 @@ export default function Home() {
       .then((r) => r.json())
       .then(setLandingHazards)
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }, []);
 
   // ── Speech recognition setup ──────────────────────────
@@ -314,29 +121,23 @@ export default function Home() {
     }
   }, [appState]);
 
-  // ── Mode selection from intro ─────────────────────────
-  const handleSelectMode = useCallback(
-    (selectedMode: AppMode) => {
-      if (modeSelectedRef.current) return;
-      modeSelectedRef.current = true;
-      setVoiceListening(false);
-      try { modeListenRef.current?.stop(); } catch { /* */ }
+  // ── Unlock audio (must be called from user gesture) ───
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    audioUnlockedRef.current = true;
 
-      setMode(selectedMode);
-      modeRef.current = selectedMode;
-      window.speechSynthesis.cancel();
+    const a = document.createElement("audio");
+    a.src = SILENT_WAV;
+    a.play().then(() => a.pause()).catch(() => {});
+    if (audioRef.current) {
+      audioRef.current.src = SILENT_WAV;
+      audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+    }
 
-      if (selectedMode === "scene") {
-        speakText("Scene mode. Tap anywhere to ask about what you see.");
-      } else {
-        speakText("Read mode. Tap anywhere and I'll read any text in view.");
-      }
-
-      setScreen("dismissing");
-      setTimeout(() => setScreen("camera"), 400);
-    },
-    []
-  );
+    navigator.mediaDevices?.getUserMedia({ audio: true })
+      .then(stream => stream.getTracks().forEach(t => t.stop()))
+      .catch(() => {});
+  }, []);
 
   // ── Start listening for voice mode selection ──────────
   const startModeListening = useCallback(() => {
@@ -374,7 +175,53 @@ export default function Home() {
       recognition.start();
       setVoiceListening(true);
     } catch { /* */ }
-  }, [handleSelectMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Mode selection ────────────────────────────────────
+  const handleSelectMode = useCallback(
+    (selectedMode: AppMode) => {
+      if (modeSelectedRef.current) return;
+      modeSelectedRef.current = true;
+      setVoiceListening(false);
+      try { modeListenRef.current?.stop(); } catch { /* */ }
+
+      unlockAudio();
+
+      setMode(selectedMode);
+      modeRef.current = selectedMode;
+      window.speechSynthesis.cancel();
+
+      if (selectedMode === "scene") {
+        speakText("Scene mode. Tap anywhere to ask about what you see.");
+      } else {
+        speakText("Read mode. Tap anywhere and I'll read any text in view.");
+      }
+
+      setScreen("dismissing");
+      setTimeout(() => setScreen("camera"), 400);
+    },
+    [unlockAudio]
+  );
+
+  // ── Landing tap (not on a button) — speaks welcome ────
+  const handleLandingTap = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    unlockAudio();
+
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(
+      "Welcome to SceneSpeak. Choose a mode to begin."
+    );
+    u.rate = 1.8;
+    u.onend = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    u.onerror = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    window.speechSynthesis.speak(u);
+  }, [unlockAudio, startModeListening]);
 
   // ── Switch mode in camera view ────────────────────────
   const switchMode = useCallback(() => {
@@ -426,7 +273,6 @@ export default function Home() {
     async (transcript: string) => {
       const currentMode = modeRef.current;
 
-      // In read mode, allow empty transcript (user just double-taps to read)
       if (!transcript && currentMode === "read") {
         transcript = "Read all visible text.";
       }
@@ -555,123 +401,145 @@ export default function Home() {
     }
   }, [appState, isListening, processRequest]);
 
-  const handleTapToStart = useCallback(() => {
-    // Unlock HTMLAudioElement with user gesture
-    const a = document.createElement("audio");
-    a.src = SILENT_WAV;
-    a.play().then(() => a.pause()).catch(() => {});
-    if (audioRef.current) {
-      audioRef.current.src = SILENT_WAV;
-      audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
-    }
-
-    // Request microphone permission from user gesture context
-    navigator.mediaDevices?.getUserMedia({ audio: true })
-      .then(stream => stream.getTracks().forEach(t => t.stop()))
-      .catch(() => {});
-
-    // Speak welcome message directly from user gesture (required for mobile)
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(
-      "Welcome to SceneSpeak. Choose a mode to begin."
-    );
-    u.rate = 1.8;
-    u.onend = () => {
-      if (!modeSelectedRef.current) startModeListening();
-    };
-    u.onerror = () => {
-      if (!modeSelectedRef.current) startModeListening();
-    };
-    window.speechSynthesis.speak(u);
-
-    setScreen("intro");
-  }, [startModeListening]);
-
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
-      {screen === "tap" && (
+      {/* ── Landing screen ─────────────────────────────── */}
+      {(screen === "landing" || screen === "dismissing") && (
         <div
-          className="fixed inset-0 z-50 cursor-pointer"
-          onClick={handleTapToStart}
-          onTouchStart={(e) => { e.preventDefault(); handleTapToStart(); }}
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden overflow-y-auto"
+          style={{
+            background: "#000000",
+            animation: screen === "dismissing" ? "fadeOut 0.4s ease-out forwards" : undefined,
+          }}
+          onClick={handleLandingTap}
+          onTouchStart={(e) => {
+            if ((e.target as HTMLElement).closest("button")) return;
+            e.preventDefault();
+            handleLandingTap();
+          }}
           role="button"
           tabIndex={0}
-          aria-label="Tap anywhere to start SceneSpeak"
+          aria-label="Tap anywhere to hear the welcome message, or choose a mode"
         >
-          {/* Map background */}
-          <div className="absolute inset-0 pointer-events-none">
-            <HazardMap hazards={landingHazards} />
-          </div>
-
-          {/* Dark overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.92) 100%)",
-            }}
-          />
-
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center h-full">
+          {/* ── Branding ─────────────────────────────────── */}
+          <div className="relative z-10 flex flex-col px-8 pt-16 sm:pt-20">
             <h1
-              className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight drop-shadow-lg"
+              className="font-[family-name:var(--font-serif)] text-white text-[38px] sm:text-[48px] leading-[1.1] tracking-tight"
               style={{ animation: "fadeInUp 0.5s ease-out" }}
             >
               SceneSpeak
             </h1>
             <p
-              className="text-[#aaa] text-[14px] mt-3 tracking-wide"
+              className="text-[#999] text-[14px] tracking-wide mt-2"
               style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
             >
-              AI-powered visual guide
+              AI-powered visual guide for the world around you
             </p>
-            <p
-              className="text-[#999] text-[15px] mt-8"
-              style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
-            >
-              Tap anywhere to start
-            </p>
-            <div
-              className="mt-6 w-12 h-12 rounded-full border-2 border-[#444] flex items-center justify-center backdrop-blur-sm"
-              style={{ animation: "breathe 2s ease-in-out infinite" }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#888]">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
+          </div>
 
-            {landingHazards.length > 0 && (
-              <div
-                className="mt-10 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-[#333]"
-                style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
-              >
+          {/* ── Map card ─────────────────────────────────── */}
+          <div
+            className="relative z-10 px-8 mt-6"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+          >
+            <div className="rounded-2xl overflow-hidden border border-[#222] h-[200px] sm:h-[240px]" style={{ boxShadow: "0 0 30px rgba(0,0,0,0.4)" }}>
+              <HazardMap hazards={landingHazards} userLocation={userLocation} compact />
+            </div>
+            <div className="flex items-center justify-between mt-3 px-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full bg-[#4FC3F7]"
+                  style={{ boxShadow: "0 0 6px rgba(79,195,247,0.5)" }}
+                />
+                <span className="text-[#666] text-[11px]">You</span>
+                <span className="text-[#333] mx-1">&bull;</span>
+                <span
+                  className="w-2 h-2 rounded-full bg-[#EF5350]"
+                  style={{ boxShadow: "0 0 6px rgba(239,83,80,0.5)" }}
+                />
+                <span className="text-[#666] text-[11px]">Hazards</span>
+              </div>
+              {landingHazards.length > 0 && (
+                <span className="text-[#555] text-[11px]">
+                  {landingHazards.length} reported
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* ── Mode buttons ─────────────────────────────── */}
+          <div
+            className="relative z-10 flex flex-col px-8 mt-8"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.15s both" }}
+          >
+            <div className="w-full h-px bg-[#222222]" />
+
+            <button
+              className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px] pointer-events-auto"
+              onClick={(e) => { e.stopPropagation(); handleSelectMode("scene"); }}
+              aria-label="Scene Mode: Tap to ask questions about what the camera sees"
+            >
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <p className="text-white text-[22px] sm:text-[26px] font-medium">
+                    <span className="text-[#4FC3F7]">01</span>
+                    <span className="ml-4">Scene Mode</span>
+                  </p>
+                  <p className="text-[#666666] text-[13px] mt-1 ml-[48px]">
+                    Ask about what you see
+                  </p>
+                </div>
+                <span className="text-[#333333] text-[22px] font-light">&rarr;</span>
+              </div>
+            </button>
+
+            <div className="w-full h-px bg-[#222222]" />
+
+            <button
+              className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px] pointer-events-auto"
+              onClick={(e) => { e.stopPropagation(); handleSelectMode("read"); }}
+              aria-label="Read Mode: Read any text the camera sees"
+            >
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <p className="text-white text-[22px] sm:text-[26px] font-medium">
+                    <span className="text-[#81C784]">02</span>
+                    <span className="ml-4">Read Mode</span>
+                  </p>
+                  <p className="text-[#666666] text-[13px] mt-1 ml-[48px]">
+                    Read signs, menus, documents
+                  </p>
+                </div>
+                <span className="text-[#333333] text-[22px] font-light">&rarr;</span>
+              </div>
+            </button>
+
+            <div className="w-full h-px bg-[#222222]" />
+
+            {voiceListening && (
+              <div className="flex items-center gap-2 mt-4">
                 <span
                   className="w-2 h-2 rounded-full bg-[#EF5350]"
                   style={{ animation: "breathe 2s ease-in-out infinite" }}
                 />
-                <span className="text-[#ccc] text-[12px]">
-                  {landingHazards.length} hazard{landingHazards.length !== 1 ? "s" : ""} reported
+                <span className="text-[#666666] text-[13px]">
+                  Listening — say a mode, or tap to choose
                 </span>
               </div>
             )}
+          </div>
 
-            <p
-              className="text-[#555555] text-[12px] tracking-[0.15em] uppercase absolute bottom-8"
-              style={{ animation: "fadeInUp 0.5s ease-out 0.25s both" }}
-            >
+          {/* ── Footer ───────────────────────────────────── */}
+          <div className="flex-1 min-h-[40px]" />
+          <div
+            className="relative z-10 px-8 pb-6"
+            style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
+          >
+            <p className="text-[#444] text-[11px] tracking-[0.15em] uppercase">
               Hook &apos;Em Hacks 2026 &bull; UT Austin
             </p>
           </div>
         </div>
-      )}
-
-      {(screen === "intro" || screen === "dismissing") && (
-        <IntroScreen
-          onSelectMode={handleSelectMode}
-          dismissing={screen === "dismissing"}
-          voiceListening={voiceListening}
-        />
       )}
 
       <CameraFeed ref={cameraRef} />

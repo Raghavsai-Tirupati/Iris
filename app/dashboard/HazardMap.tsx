@@ -50,6 +50,35 @@ function createHazardIcon() {
 
 const hazardIcon = createHazardIcon();
 
+function createUserIcon() {
+  return L.divIcon({
+    className: "",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    html: `
+      <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          position:absolute;
+          width:28px;height:28px;
+          border-radius:50%;
+          background:rgba(79,195,247,0.15);
+          animation:hazardPulse 3s ease-out infinite;
+        "></div>
+        <div style="
+          position:relative;
+          width:12px;height:12px;
+          border-radius:50%;
+          background:radial-gradient(circle at 40% 35%, #81d4fa, #4fc3f7, #0288d1);
+          box-shadow:0 0 10px rgba(79,195,247,0.8), 0 0 20px rgba(79,195,247,0.3);
+          border:2px solid rgba(255,255,255,0.95);
+        "></div>
+      </div>
+    `,
+  });
+}
+
+const userIcon = createUserIcon();
+
 function RecenterOnNewHazard({ hazards }: { hazards: Hazard[] }) {
   const map = useMap();
   useEffect(() => {
@@ -63,11 +92,17 @@ function RecenterOnNewHazard({ hazards }: { hazards: Hazard[] }) {
   return null;
 }
 
-export default function HazardMap({ hazards }: { hazards: Hazard[] }) {
+export default function HazardMap({ hazards, userLocation, compact }: {
+  hazards: Hazard[];
+  userLocation?: [number, number] | null;
+  compact?: boolean;
+}) {
   const center: [number, number] =
-    hazards.length > 0
-      ? [hazards[hazards.length - 1].latitude, hazards[hazards.length - 1].longitude]
-      : [30.2849, -97.7341];
+    userLocation
+      ? userLocation
+      : hazards.length > 0
+        ? [hazards[hazards.length - 1].latitude, hazards[hazards.length - 1].longitude]
+        : [30.2849, -97.7341];
 
   return (
     <>
@@ -118,16 +153,45 @@ export default function HazardMap({ hazards }: { hazards: Hazard[] }) {
       `}</style>
       <MapContainer
         center={center}
-        zoom={15}
+        zoom={compact ? 16 : 15}
         style={{ height: "100%", width: "100%", background: "#0a0a0a" }}
-        scrollWheelZoom={true}
-        zoomControl={true}
+        scrollWheelZoom={!compact}
+        zoomControl={!compact}
+        dragging={!compact}
+        attributionControl={!compact}
       >
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <RecenterOnNewHazard hazards={hazards} />
+        {!compact && <RecenterOnNewHazard hazards={hazards} />}
+        {userLocation && (
+          <Marker position={userLocation} icon={userIcon}>
+            <Popup>
+              <div style={{ maxWidth: 200 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#4fc3f7",
+                    boxShadow: "0 0 6px rgba(79,195,247,0.6)",
+                  }} />
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#4fc3f7",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}>
+                    Your Location
+                  </span>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
         {hazards.map((h) => (
           <Marker key={h.id} position={[h.latitude, h.longitude]} icon={hazardIcon}>
             <Popup>
