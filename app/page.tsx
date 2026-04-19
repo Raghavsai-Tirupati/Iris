@@ -42,7 +42,6 @@ export default function Home() {
   const isListeningRef = useRef(false);
   const modeRef = useRef<AppMode>("scene");
   const audioUnlockedRef = useRef(false);
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [screen, setScreen] = useState<"landing" | "dismissing" | "camera">("landing");
   const [mode, setMode] = useState<AppMode>("scene");
@@ -256,9 +255,8 @@ export default function Home() {
     [speakFallback, reportHazardIfNeeded]
   );
 
-  // ── Screen tap handler ────────────────────────────────
-  const handleScreenTap = useCallback(() => {
-    // If speaking/thinking, stop everything and reset to idle
+  // ── Hold-to-talk: press down → listen, lift → send ───
+  const handlePressDown = useCallback(() => {
     if (appState === "speaking") {
       window.speechSynthesis.cancel();
       const audio = audioRef.current;
@@ -266,49 +264,38 @@ export default function Home() {
       setAppState("idle");
       return;
     }
-    if (appState === "thinking") return;
+    if (appState === "thinking" || isListening) return;
 
-    if (isListening) {
-      // Second tap — stop listening and send
-      playChime(440);
-      setIsListening(false);
-      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
-      try { recognitionRef.current?.stop(); } catch { /* */ }
+    window.speechSynthesis.cancel();
+    playChime(1200);
+    setResponseText(null);
+    frameRef.current = null;
+    transcriptRef.current = "";
+    setIsListening(true);
+    setAppState("listening");
+
+    frameRef.current = cameraRef.current?.capture() || null;
+
+    try { recognitionRef.current?.stop(); } catch { /* */ }
+    setTimeout(() => {
+      try { recognitionRef.current?.start(); } catch { /* */ }
+    }, 50);
+  }, [appState, isListening]);
+
+  const handlePressUp = useCallback(() => {
+    if (!isListeningRef.current) return;
+
+    playChime(440);
+    setIsListening(false);
+    try { recognitionRef.current?.stop(); } catch { /* */ }
+
+    // Brief delay to let final recognition result land
+    setTimeout(() => {
       const transcript = transcriptRef.current;
       transcriptRef.current = "";
       processRequest(transcript);
-    } else {
-      // First tap — kill any leftover state, start fresh
-      window.speechSynthesis.cancel();
-      playChime(1200);
-      setResponseText(null);
-      frameRef.current = null;
-      transcriptRef.current = "";
-      setIsListening(true);
-      setAppState("listening");
-
-      // Capture frame immediately
-      frameRef.current = cameraRef.current?.capture() || null;
-
-      // Start speech recognition fresh
-      try { recognitionRef.current?.stop(); } catch { /* */ }
-      setTimeout(() => {
-        try { recognitionRef.current?.start(); } catch { /* */ }
-      }, 50);
-
-      // Auto-send after 1.5s if no speech detected
-      silenceTimerRef.current = setTimeout(() => {
-        if (!isListeningRef.current) return;
-        const transcript = transcriptRef.current;
-        if (!transcript.trim()) {
-          setIsListening(false);
-          try { recognitionRef.current?.stop(); } catch { /* */ }
-          transcriptRef.current = "";
-          processRequest("");
-        }
-      }, 1500);
-    }
-  }, [appState, isListening, processRequest]);
+    }, 300);
+  }, [processRequest]);
 
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
@@ -466,23 +453,22 @@ export default function Home() {
       {screen === "camera" && (
         <div
           className="fixed inset-0 z-40"
-          onClick={handleScreenTap}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleScreenTap();
-          }}
+          onMouseDown={handlePressDown}
+          onMouseUp={handlePressUp}
+          onTouchStart={(e) => { e.preventDefault(); handlePressDown(); }}
+          onTouchEnd={(e) => { e.preventDefault(); handlePressUp(); }}
           role="button"
           tabIndex={0}
           aria-label={
             isListening
-              ? "Tap to stop recording and send your question"
+              ? "Release to send your question"
               : appState === "thinking"
                 ? "Analyzing your question"
                 : appState === "speaking"
-                  ? "Playing response"
+                  ? "Tap to stop response"
                   : mode === "scene"
-                    ? "Tap anywhere to start speaking your question"
-                    : "Tap anywhere to read text in view"
+                    ? "Hold to speak, release to send"
+                    : "Hold to speak, release to read text"
           }
         />
       )}
