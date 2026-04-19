@@ -385,38 +385,41 @@ export default function Home() {
                   </clipPath>
                 </defs>
 
-                {/* Ring that draws in */}
-                <circle cx="100" cy="100" r="70" fill="none" stroke="url(#ringGrad)" strokeWidth="1.2"
-                  style={{ strokeDasharray: 440, strokeDashoffset: 440, animation: "ringDraw 1.6s cubic-bezier(.65,.05,.36,1) 0.2s forwards" }} />
+                {/* Blink wrapper — quick blink 1s after eye fully opens */}
+                <g style={{ transformOrigin: "100px 100px", animation: "blink 0.18s ease-in-out 4.5s 1" }}>
+                  {/* Ring that draws in */}
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="url(#ringGrad)" strokeWidth="1.2"
+                    style={{ strokeDasharray: 440, strokeDashoffset: 440, animation: "ringDraw 1.6s cubic-bezier(.65,.05,.36,1) 0.2s forwards" }} />
 
-                {/* Iris clipped to almond */}
-                <g clipPath="url(#eyeClip)">
-                  <g style={{ transformOrigin: "100px 100px", transform: "scale(0)", opacity: 0, animation: "irisOpen 1.4s cubic-bezier(.22,.61,.36,1) 1.7s forwards" }}>
-                    <circle cx="100" cy="100" r="52" fill="url(#irisGrad)" />
-                    {/* Striations */}
-                    <g style={{ opacity: 0, animation: "fadeIn 1.2s ease-out 2.2s forwards" }}>
-                      {[[100,52,100,64],[124,58,119,69],[142,75,134,83],[148,100,136,100],[142,125,134,117],[124,142,119,131],[100,148,100,136],[76,142,81,131],[58,125,66,117],[52,100,64,100],[58,75,66,83],[76,58,81,69],[112,54,110,66],[134,66,128,75],[146,88,135,93],[146,112,135,107],[134,134,128,125],[112,146,110,134],[88,146,90,134],[66,134,72,125],[54,112,65,107],[54,88,65,93],[66,66,72,75],[88,54,90,66]].map(([x1,y1,x2,y2], i) => (
-                        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.14)" strokeWidth="0.5" strokeLinecap="round" />
-                      ))}
-                    </g>
-                    <circle cx="100" cy="100" r="52" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
-                    <circle cx="100" cy="100" r="32" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
-                    {/* Pupil */}
-                    <g style={{ transformOrigin: "100px 100px", transform: "scale(0)", animation: "pupilIn 0.6s cubic-bezier(.34,1.56,.64,1) 2.5s forwards" }}>
-                      <circle cx="100" cy="100" r="18" fill="url(#pupilGrad)" />
-                      <g style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 2.8s forwards" }}>
-                        <ellipse cx="93" cy="93" rx="3.5" ry="2" fill="rgba(255,255,255,0.9)" />
-                        <circle cx="106" cy="106" r="1" fill="rgba(255,255,255,0.35)" />
+                  {/* Iris clipped to almond */}
+                  <g clipPath="url(#eyeClip)">
+                    <g style={{ transformOrigin: "100px 100px", transform: "scale(0)", opacity: 0, animation: "irisOpen 1.4s cubic-bezier(.22,.61,.36,1) 1.7s forwards" }}>
+                      <circle cx="100" cy="100" r="52" fill="url(#irisGrad)" />
+                      {/* Striations */}
+                      <g style={{ opacity: 0, animation: "fadeIn 1.2s ease-out 2.2s forwards" }}>
+                        {[[100,52,100,64],[124,58,119,69],[142,75,134,83],[148,100,136,100],[142,125,134,117],[124,142,119,131],[100,148,100,136],[76,142,81,131],[58,125,66,117],[52,100,64,100],[58,75,66,83],[76,58,81,69],[112,54,110,66],[134,66,128,75],[146,88,135,93],[146,112,135,107],[134,134,128,125],[112,146,110,134],[88,146,90,134],[66,134,72,125],[54,112,65,107],[54,88,65,93],[66,66,72,75],[88,54,90,66]].map(([x1,y1,x2,y2], i) => (
+                          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.14)" strokeWidth="0.5" strokeLinecap="round" />
+                        ))}
+                      </g>
+                      <circle cx="100" cy="100" r="52" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
+                      <circle cx="100" cy="100" r="32" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+                      {/* Pupil */}
+                      <g style={{ transformOrigin: "100px 100px", transform: "scale(0)", animation: "pupilIn 0.6s cubic-bezier(.34,1.56,.64,1) 2.5s forwards" }}>
+                        <circle cx="100" cy="100" r="18" fill="url(#pupilGrad)" />
+                        <g style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 2.8s forwards" }}>
+                          <ellipse cx="93" cy="93" rx="3.5" ry="2" fill="rgba(255,255,255,0.9)" />
+                          <circle cx="106" cy="106" r="1" fill="rgba(255,255,255,0.35)" />
+                        </g>
                       </g>
                     </g>
                   </g>
-                </g>
 
-                {/* Eyelid outlines */}
-                <path d="M 20 100 Q 100 40, 180 100" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round"
-                  style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 1.5s forwards" }} />
-                <path d="M 20 100 Q 100 160, 180 100" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round"
-                  style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 1.5s forwards" }} />
+                  {/* Eyelid outlines */}
+                  <path d="M 20 100 Q 100 40, 180 100" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round"
+                    style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 1.5s forwards" }} />
+                  <path d="M 20 100 Q 100 160, 180 100" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round"
+                    style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 1.5s forwards" }} />
+                </g>
               </svg>
             </div>
 
