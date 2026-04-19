@@ -64,6 +64,7 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
   const [voiceListening, setVoiceListening] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
   const [landingHazards, setLandingHazards] = useState<Hazard[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
@@ -121,20 +122,12 @@ export default function Home() {
     }
   }, [appState]);
 
-  // ── First tap anywhere — unlock audio + welcome speech + start listening ──
+  // ── First tap — unlock audio + welcome speech (must use onTouchStart on iOS) ──
   const handleFirstTap = useCallback(() => {
     if (audioUnlockedRef.current) return;
     audioUnlockedRef.current = true;
 
-    // Speak welcome FIRST — must be the first speechSynthesis call in the gesture
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(
-      "Welcome to SceneSpeak. Say scene mode or read mode to begin."
-    );
-    u.rate = 1.8;
-    window.speechSynthesis.speak(u);
-
-    // Unlock HTMLAudioElement after speech is queued
+    // 1. Unlock HTMLAudioElement with user gesture
     const a = document.createElement("audio");
     a.src = SILENT_WAV;
     a.play().then(() => a.pause()).catch(() => {});
@@ -143,16 +136,25 @@ export default function Home() {
       audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
     }
 
-    // Request mic permission, then start voice listening immediately
+    // 2. Request mic permission
     navigator.mediaDevices?.getUserMedia({ audio: true })
       .then(stream => {
         stream.getTracks().forEach(t => t.stop());
         if (!modeSelectedRef.current) startModeListening();
       })
       .catch(() => {
-        // Even if getUserMedia fails, try speech recognition (it manages its own mic)
         if (!modeSelectedRef.current) startModeListening();
       });
+
+    // 3. Speak welcome — must be in the SAME touchstart handler for iOS Safari
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(
+      "Welcome to SceneSpeak. Say scene mode or read mode to begin."
+    );
+    u.rate = 1.8;
+    window.speechSynthesis.speak(u);
+
+    setAudioReady(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -407,12 +409,19 @@ export default function Home() {
             background: "#000000",
             animation: screen === "dismissing" ? "fadeOut 0.4s ease-out forwards" : undefined,
           }}
-          onClick={() => { if (!audioUnlockedRef.current) handleFirstTap(); }}
-          onTouchEnd={(e) => {
-            if ((e.target as HTMLElement).closest("button")) return;
-            if (!audioUnlockedRef.current) { e.preventDefault(); handleFirstTap(); }
-          }}
         >
+          {/* Tap-to-start overlay — uses onTouchStart (required for iOS speechSynthesis) */}
+          {!audioReady && (
+            <div
+              className="fixed inset-0 z-[60]"
+              onClick={handleFirstTap}
+              onTouchStart={(e) => { e.preventDefault(); handleFirstTap(); }}
+              role="button"
+              tabIndex={0}
+              aria-label="Tap anywhere to start SceneSpeak"
+            />
+          )}
+
           {/* ── Branding ────────────────────────────────────── */}
           <div className="relative z-10 flex flex-col px-8 pt-16 sm:pt-20">
             <h1
@@ -468,8 +477,7 @@ export default function Home() {
 
             <button
               className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px]"
-              onClick={() => { if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("scene"); }}
-              onTouchEnd={(e) => { e.preventDefault(); if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("scene"); }}
+              onClick={() => handleSelectMode("scene")}
               aria-label="Scene Mode: Tap to ask questions about what the camera sees"
             >
               <div className="flex items-baseline justify-between">
@@ -490,8 +498,7 @@ export default function Home() {
 
             <button
               className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px]"
-              onClick={() => { if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("read"); }}
-              onTouchEnd={(e) => { e.preventDefault(); if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("read"); }}
+              onClick={() => handleSelectMode("read")}
               aria-label="Read Mode: Read any text the camera sees"
             >
               <div className="flex items-baseline justify-between">
