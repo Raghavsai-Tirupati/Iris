@@ -52,13 +52,6 @@ export default function Home() {
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
 
-  // ── Request mic permission on mount ───────────────────
-  useEffect(() => {
-    navigator.mediaDevices?.getUserMedia({ audio: true })
-      .then(stream => { stream.getTracks().forEach(t => t.stop()); })
-      .catch(() => {});
-  }, []);
-
   // ── Speech recognition setup ──────────────────────────
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -112,7 +105,13 @@ export default function Home() {
     u.rate = 1.0;
     window.speechSynthesis.speak(u);
 
-    // 3. Default to scene mode, transition to camera after 0.5s hold
+    // 3. Request camera + mic permissions now (not on page load)
+    cameraRef.current?.startCamera();
+    navigator.mediaDevices?.getUserMedia({ audio: true })
+      .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+      .catch(() => {});
+
+    // 4. Default to scene mode, transition to camera after 0.5s hold
     setMode("scene");
     modeRef.current = "scene";
     setTimeout(() => {

@@ -10,22 +10,31 @@ import {
 
 export interface CameraFeedHandle {
   capture: () => string | null;
+  startCamera: () => Promise<void>;
 }
 
 const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
 
-    async function startCamera() {
+  useImperativeHandle(ref, () => ({
+    async startCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
           audio: false,
         });
+        streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -35,18 +44,7 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
           "Camera access denied. Please allow camera access to use Iris."
         );
       }
-    }
-
-    startCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
-  useImperativeHandle(ref, () => ({
+    },
     capture(): string | null {
       const video = videoRef.current;
       const canvas = canvasRef.current;
