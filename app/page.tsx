@@ -56,6 +56,13 @@ export default function Home() {
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
 
+  // ── Request mic permission on mount ───────────────────
+  useEffect(() => {
+    navigator.mediaDevices?.getUserMedia({ audio: true })
+      .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+      .catch(() => {});
+  }, []);
+
   // ── Speech recognition setup ──────────────────────────
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -107,12 +114,7 @@ export default function Home() {
       audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
     }
 
-    // 2. Request mic permission
-    navigator.mediaDevices?.getUserMedia({ audio: true })
-      .then(stream => { stream.getTracks().forEach(t => t.stop()); })
-      .catch(() => {});
-
-    // 3. Speak welcome — must be in the SAME touchstart handler for iOS Safari
+    // 2. Speak welcome — must be in the SAME touchstart handler for iOS Safari
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(
       "Welcome to Iris. Tap anywhere to describe your surroundings, or hold and speak to ask a question."
@@ -120,7 +122,7 @@ export default function Home() {
     u.rate = 1.0;
     window.speechSynthesis.speak(u);
 
-    // 4. Default to scene mode, open eye, transition to camera
+    // 3. Default to scene mode, open eye, transition to camera
     setMode("scene");
     modeRef.current = "scene";
     setEyeOpen(true);
