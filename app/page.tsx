@@ -420,12 +420,12 @@ export default function Home() {
 
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
-      {/* ── Landing screen ─────────────────────────────── */}
+      {/* ── Landing screen — triptych layout ──────────── */}
       {(screen === "landing" || screen === "dismissing") && (
         <div
-          className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+          className="fixed inset-0 z-50 flex"
           style={{
-            background: "#000000",
+            background: "#000",
             animation: screen === "dismissing" ? "fadeOut 0.4s ease-out forwards" : undefined,
           }}
         >
@@ -441,135 +441,128 @@ export default function Home() {
             />
           )}
 
-          {/* ── Branding ────────────────────────────────────── */}
-          <div className="relative z-10 flex flex-col px-8 pt-16 sm:pt-20">
-            <h1
-              className="text-white text-[38px] sm:text-[48px] leading-[1.1] tracking-tight"
-              style={{ animation: "fadeInUp 0.5s ease-out", fontFamily: '"Times New Roman", Times, serif' }}
-            >
-              Iris
-            </h1>
-            <p
-              className="text-[#999] text-[14px] tracking-wide mt-2"
-              style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
-            >
-              AI-powered visual guide for the world around you
-            </p>
-          </div>
-
-          {/* ── Map card (square) ─────────────────────────── */}
-          <div
-            className="relative z-10 px-8 mt-8"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+          {/* ── Left panel — Scene Mode ───────────────────── */}
+          <button
+            className="triptych-panel triptych-scene flex-1 flex flex-col items-center justify-center relative"
+            onClick={() => handleSelectMode("scene")}
+            aria-label="Scene Mode: Describe what the camera sees"
+            style={{ animation: "panelSlideLeft 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both" }}
           >
+            <span
+              className="absolute left-2.5 top-1/2 text-[9px] tracking-[0.3em] uppercase"
+              style={{
+                color: "rgba(79,195,247,0.2)",
+                transform: "translateY(-50%) rotate(-90deg)",
+                transformOrigin: "center",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Scene Mode
+            </span>
+
             <div
-              className="rounded-2xl overflow-hidden border border-[#222] w-full"
-              style={{ aspectRatio: "1 / 1", maxHeight: "280px", boxShadow: "0 0 30px rgba(0,0,0,0.4)" }}
+              className="triptych-icon"
+              style={{ background: "rgba(79,195,247,0.05)", animationDelay: "0s" }}
             >
-              <HazardMap hazards={landingHazards} userLocation={userLocation} compact />
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
             </div>
-            <div className="flex items-center justify-between mt-3 px-1">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full bg-[#4FC3F7]"
-                  style={{ boxShadow: "0 0 6px rgba(79,195,247,0.5)" }}
-                />
-                <span className="text-[#666] text-[11px]">You</span>
-                <span className="text-[#333] mx-1">&bull;</span>
-                <span
-                  className="w-2 h-2 rounded-full bg-[#EF5350]"
-                  style={{ boxShadow: "0 0 6px rgba(239,83,80,0.5)" }}
-                />
-                <span className="text-[#666] text-[11px]">Hazards</span>
-              </div>
-              {landingHazards.length > 0 && (
-                <span className="text-[#555] text-[11px]">
-                  {landingHazards.length} reported
-                </span>
-              )}
-            </div>
-          </div>
 
-          {/* ── Mode buttons ─────────────────────────────── */}
-          <div
-            className="relative z-10 flex flex-col gap-3 px-8 mt-8"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.15s both" }}
-          >
-            <button
-              className="mode-card mode-card-scene w-full rounded-2xl border border-[#1a1a1a] bg-[#0d0d0d] p-5 text-left min-h-[44px]"
-              onClick={() => handleSelectMode("scene")}
-              aria-label="Scene Mode: Tap to ask questions about what the camera sees"
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className="mode-icon flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: "rgba(79,195,247,0.08)", border: "1px solid rgba(79,195,247,0.15)" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-[17px] font-medium">Scene Mode</p>
-                  <p className="text-[#555] text-[13px] mt-0.5">Describe what&apos;s around you</p>
-                </div>
-                <svg className="mode-arrow flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </div>
-            </button>
-
-            <button
-              className="mode-card mode-card-read w-full rounded-2xl border border-[#1a1a1a] bg-[#0d0d0d] p-5 text-left min-h-[44px]"
-              onClick={() => handleSelectMode("read")}
-              aria-label="Read Mode: Read any text the camera sees"
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className="mode-icon flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: "rgba(129,199,132,0.08)", border: "1px solid rgba(129,199,132,0.15)" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#81C784" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-[17px] font-medium">Read Mode</p>
-                  <p className="text-[#555] text-[13px] mt-0.5">Signs, menus &amp; documents</p>
-                </div>
-                <svg className="mode-arrow flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </div>
-            </button>
-
-            {voiceListening && (
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <span
-                  className="w-2 h-2 rounded-full bg-[#EF5350]"
-                  style={{ animation: "breathe 2s ease-in-out infinite" }}
-                />
-                <span className="text-[#555] text-[13px]">
-                  Listening — say a mode, or tap to choose
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* ── Footer ───────────────────────────────────── */}
-          <div className="flex-1 min-h-[40px]" />
-          <div
-            className="relative z-10 px-8 pb-6"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
-          >
-            <p className="text-[#444] text-[11px] tracking-[0.15em] uppercase">
-              Hook &apos;Em Hacks 2026 &bull; UT Austin
+            <p className="text-white text-[14px] font-medium mt-5 tracking-wide">Scene</p>
+            <p className="text-[#555] text-[10px] mt-1.5 text-center px-3 leading-relaxed">
+              Describe your surroundings
             </p>
+          </button>
+
+          {/* ── Separator ─────────────────────────────────── */}
+          <div className="w-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+
+          {/* ── Center panel — Branding ───────────────────── */}
+          <div
+            className="flex-[1.4] flex flex-col items-center relative"
+            style={{
+              background: "#050505",
+              animation: "fadeInUp 0.6s cubic-bezier(0.22,1,0.36,1) both",
+            }}
+          >
+            <div className="flex flex-col items-center pt-20 sm:pt-24">
+              <h1
+                className="text-white text-[44px] sm:text-[52px] leading-[1] tracking-tight"
+                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+              >
+                Iris
+              </h1>
+              <p className="text-[#555] text-[11px] tracking-[0.15em] uppercase mt-3">
+                Visual Assistant
+              </p>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center w-full px-4">
+              <div
+                className="rounded-xl overflow-hidden border border-[#1a1a1a] w-full"
+                style={{ aspectRatio: "1 / 1", maxWidth: "180px", boxShadow: "0 0 24px rgba(0,0,0,0.4)" }}
+              >
+                <HazardMap hazards={landingHazards} userLocation={userLocation} compact />
+              </div>
+            </div>
+
+            <div className="pb-8 flex flex-col items-center gap-3">
+              {voiceListening && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full bg-[#EF5350]"
+                    style={{ animation: "breathe 2s ease-in-out infinite" }}
+                  />
+                  <span className="text-[#555] text-[10px]">Say a mode or tap</span>
+                </div>
+              )}
+              <p className="text-[#2a2a2a] text-[9px] tracking-[0.2em] uppercase">
+                Hook &apos;Em Hacks 2026
+              </p>
+            </div>
           </div>
+
+          {/* ── Separator ─────────────────────────────────── */}
+          <div className="w-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+
+          {/* ── Right panel — Read Mode ───────────────────── */}
+          <button
+            className="triptych-panel triptych-read flex-1 flex flex-col items-center justify-center relative"
+            onClick={() => handleSelectMode("read")}
+            aria-label="Read Mode: Read any text the camera sees"
+            style={{ animation: "panelSlideRight 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}
+          >
+            <span
+              className="absolute right-2.5 top-1/2 text-[9px] tracking-[0.3em] uppercase"
+              style={{
+                color: "rgba(129,199,132,0.2)",
+                transform: "translateY(-50%) rotate(90deg)",
+                transformOrigin: "center",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Read Mode
+            </span>
+
+            <div
+              className="triptych-icon"
+              style={{ background: "rgba(129,199,132,0.05)", animationDelay: "0.5s" }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#81C784" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+
+            <p className="text-white text-[14px] font-medium mt-5 tracking-wide">Read</p>
+            <p className="text-[#555] text-[10px] mt-1.5 text-center px-3 leading-relaxed">
+              Signs, menus &amp; documents
+            </p>
+          </button>
         </div>
       )}
 
