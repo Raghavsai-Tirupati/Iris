@@ -57,6 +57,7 @@ export default function Home() {
   const modeSelectedRef = useRef(false);
   const modeListenRef = useRef<SpeechRecognition | null>(null);
   const audioUnlockedRef = useRef(false);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [screen, setScreen] = useState<"landing" | "dismissing" | "camera">("landing");
   const [mode, setMode] = useState<AppMode>("scene");
@@ -149,7 +150,7 @@ export default function Home() {
     // 3. Speak welcome — must be in the SAME touchstart handler for iOS Safari
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(
-      "Welcome to SceneSpeak. Say scene mode or read mode to begin."
+      "Welcome to SceneSpeak. Tap anywhere to describe your surroundings, or hold and speak to ask a question. Say scene mode or read mode to begin."
     );
     u.rate = 1.0;
     window.speechSynthesis.speak(u);
@@ -274,6 +275,9 @@ export default function Home() {
       if (!transcript && currentMode === "read") {
         transcript = "Read all visible text.";
       }
+      if (!transcript && currentMode === "scene") {
+        transcript = "Describe what you see.";
+      }
       if (!transcript) {
         setAppState("idle");
         return;
@@ -380,14 +384,17 @@ export default function Home() {
     if (isBusy) return;
 
     if (isListening) {
+      // Second tap — stop listening and send
       playChime(440);
       setIsListening(false);
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       try { recognitionRef.current?.stop(); } catch { /* */ }
       const transcript = transcriptRef.current;
       transcriptRef.current = "";
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
       processRequest(transcript);
     } else {
+      // First tap — start listening + 3s silence auto-send
       playChime(1200);
       setIsListening(true);
       setAppState("listening");
@@ -396,6 +403,18 @@ export default function Home() {
       frameTimeoutRef.current = setTimeout(() => {
         frameRef.current = cameraRef.current?.captureAndFreeze() || null;
       }, 500);
+
+      // Auto-send after 3s if no speech detected
+      silenceTimerRef.current = setTimeout(() => {
+        if (!isListeningRef.current) return;
+        const transcript = transcriptRef.current;
+        if (!transcript.trim()) {
+          setIsListening(false);
+          try { recognitionRef.current?.stop(); } catch { /* */ }
+          transcriptRef.current = "";
+          processRequest("");
+        }
+      }, 3000);
     }
   }, [appState, isListening, processRequest]);
 

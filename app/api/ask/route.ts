@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { askGemini } from "@/lib/gemini";
 import { synthesizeSpeech } from "@/lib/tts";
 import { AskRequest } from "@/lib/types";
+import fs from "fs";
+import path from "path";
+
+const HISTORY_FILE = path.join(process.cwd(), "data", "history.json");
+
+function appendHistory(transcript: string, response: string, mode: string) {
+  let history: unknown[] = [];
+  try {
+    history = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf-8"));
+  } catch { /* file doesn't exist yet */ }
+  history.push({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: Date.now(),
+    transcript,
+    response,
+    mode,
+  });
+  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +35,8 @@ export async function POST(request: NextRequest) {
     }
 
     const responseText = await askGemini(image, transcript, history || [], mode || "scene");
+
+    appendHistory(transcript, responseText, mode || "scene");
 
     try {
       const audioBuffer = await synthesizeSpeech(responseText);
