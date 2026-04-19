@@ -37,7 +37,6 @@ export default function Home() {
   const cameraRef = useRef<CameraFeedHandle>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const frameRef = useRef<string | null>(null);
-  const frameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef("");
   const isListeningRef = useRef(false);
@@ -281,7 +280,6 @@ export default function Home() {
       try { recognitionRef.current?.stop(); } catch { /* */ }
       const transcript = transcriptRef.current;
       transcriptRef.current = "";
-      if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
       processRequest(transcript);
     } else {
       // First tap — kill any leftover state, start fresh
@@ -293,18 +291,16 @@ export default function Home() {
       setIsListening(true);
       setAppState("listening");
 
-      // Capture frame after short delay
-      frameTimeoutRef.current = setTimeout(() => {
-        frameRef.current = cameraRef.current?.capture() || null;
-      }, 500);
+      // Capture frame immediately
+      frameRef.current = cameraRef.current?.capture() || null;
 
       // Start speech recognition fresh
       try { recognitionRef.current?.stop(); } catch { /* */ }
       setTimeout(() => {
         try { recognitionRef.current?.start(); } catch { /* */ }
-      }, 100);
+      }, 50);
 
-      // Auto-send after 3s if no speech detected
+      // Auto-send after 1.5s if no speech detected
       silenceTimerRef.current = setTimeout(() => {
         if (!isListeningRef.current) return;
         const transcript = transcriptRef.current;
@@ -314,7 +310,7 @@ export default function Home() {
           transcriptRef.current = "";
           processRequest("");
         }
-      }, 3000);
+      }, 1500);
     }
   }, [appState, isListening, processRequest]);
 
