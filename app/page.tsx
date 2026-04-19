@@ -1,9 +1,20 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import CameraFeed, { CameraFeedHandle } from "@/components/CameraFeed";
 import StatusIndicator from "@/components/StatusIndicator";
 import { AppState, AppMode, Message } from "@/lib/types";
+
+const HazardMap = dynamic(() => import("./dashboard/HazardMap"), { ssr: false });
+
+interface Hazard {
+  id: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  timestamp: number;
+}
 
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
@@ -255,9 +266,17 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
   const [voiceListening, setVoiceListening] = useState(false);
+  const [landingHazards, setLandingHazards] = useState<Hazard[]>([]);
 
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
+
+  useEffect(() => {
+    fetch("/api/hazard")
+      .then((r) => r.json())
+      .then(setLandingHazards)
+      .catch(() => {});
+  }, []);
 
   // ── Speech recognition setup ──────────────────────────
   useEffect(() => {
@@ -572,41 +591,78 @@ export default function Home() {
     <main className="fixed inset-0 bg-[#0a0a0a]">
       {screen === "tap" && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer"
-          style={{ background: "#000000" }}
+          className="fixed inset-0 z-50 cursor-pointer"
           onClick={handleTapToStart}
           onTouchStart={(e) => { e.preventDefault(); handleTapToStart(); }}
           role="button"
           tabIndex={0}
           aria-label="Tap anywhere to start SceneSpeak"
         >
-          <h1
-            className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight"
-            style={{ animation: "fadeInUp 0.5s ease-out" }}
-          >
-            SceneSpeak
-          </h1>
-          <p
-            className="text-[#808080] text-[15px] mt-6"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
-          >
-            Tap anywhere to start
-          </p>
-          <div
-            className="mt-10 w-12 h-12 rounded-full border-2 border-[#333333] flex items-center justify-center"
-            style={{ animation: "breathe 2s ease-in-out infinite" }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#666666]">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
+          {/* Map background */}
+          <div className="absolute inset-0 pointer-events-none">
+            <HazardMap hazards={landingHazards} />
           </div>
-          <p
-            className="text-[#555555] text-[12px] tracking-[0.15em] uppercase mt-auto mb-8"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
-          >
-            Hook &apos;Em Hacks 2026 &bull; UT Austin
-          </p>
+
+          {/* Dark overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0.92) 100%)",
+            }}
+          />
+
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center justify-center h-full">
+            <h1
+              className="font-[family-name:var(--font-serif)] text-white text-[42px] sm:text-[52px] leading-[1.1] tracking-tight drop-shadow-lg"
+              style={{ animation: "fadeInUp 0.5s ease-out" }}
+            >
+              SceneSpeak
+            </h1>
+            <p
+              className="text-[#aaa] text-[14px] mt-3 tracking-wide"
+              style={{ animation: "fadeInUp 0.5s ease-out 0.05s both" }}
+            >
+              AI-powered visual guide
+            </p>
+            <p
+              className="text-[#999] text-[15px] mt-8"
+              style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
+            >
+              Tap anywhere to start
+            </p>
+            <div
+              className="mt-6 w-12 h-12 rounded-full border-2 border-[#444] flex items-center justify-center backdrop-blur-sm"
+              style={{ animation: "breathe 2s ease-in-out infinite" }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#888]">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+
+            {landingHazards.length > 0 && (
+              <div
+                className="mt-10 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-[#333]"
+                style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full bg-[#EF5350]"
+                  style={{ animation: "breathe 2s ease-in-out infinite" }}
+                />
+                <span className="text-[#ccc] text-[12px]">
+                  {landingHazards.length} hazard{landingHazards.length !== 1 ? "s" : ""} reported
+                </span>
+              </div>
+            )}
+
+            <p
+              className="text-[#555555] text-[12px] tracking-[0.15em] uppercase absolute bottom-8"
+              style={{ animation: "fadeInUp 0.5s ease-out 0.25s both" }}
+            >
+              Hook &apos;Em Hacks 2026 &bull; UT Austin
+            </p>
+          </div>
         </div>
       )}
 
