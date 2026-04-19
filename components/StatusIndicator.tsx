@@ -108,8 +108,8 @@ export default function StatusIndicator({
 
       {/* ── Bottom black bar ───────────────────────────── */}
       <div className="bg-black px-5 pt-3 pb-6">
-        {/* Response panel */}
-        {state === "speaking" && responseText && (
+        {/* Response panel — persists until next tap */}
+        {responseText && (
           <div className="rounded-2xl bg-[#111] border border-[#222] p-4 max-w-lg mx-auto mb-3">
             <p className="text-[#E0E0E0] text-[14px] leading-relaxed">
               {responseText}

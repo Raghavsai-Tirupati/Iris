@@ -91,11 +91,10 @@ export default function Home() {
     recognitionRef.current = recognition;
   }, []);
 
-  // ── Reset on idle ─────────────────────────────────────
+  // ── Reset on idle — keep responseText visible ─────────
   useEffect(() => {
     if (appState === "idle") {
-      cameraRef.current?.unfreeze();
-      setResponseText(null);
+      frameRef.current = null;
     }
   }, [appState]);
 
@@ -305,14 +304,16 @@ export default function Home() {
       if (frameTimeoutRef.current) clearTimeout(frameTimeoutRef.current);
       processRequest(transcript);
     } else {
-      // First tap — start listening + 3s silence auto-send
+      // First tap — clear old response, start listening + 3s silence auto-send
       playChime(1200);
+      setResponseText(null);
+      frameRef.current = null;
       setIsListening(true);
       setAppState("listening");
       transcriptRef.current = "";
       try { recognitionRef.current?.start(); } catch { /* */ }
       frameTimeoutRef.current = setTimeout(() => {
-        frameRef.current = cameraRef.current?.captureAndFreeze() || null;
+        frameRef.current = cameraRef.current?.capture() || null;
       }, 500);
 
       // Auto-send after 3s if no speech detected
