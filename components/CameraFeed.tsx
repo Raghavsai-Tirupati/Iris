@@ -100,42 +100,35 @@ const CameraFeed = forwardRef<CameraFeedHandle>(function CameraFeed(_, ref) {
 
   return (
     <>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={`fixed inset-0 w-full h-full object-cover ${frozenSrc ? "invisible" : ""}`}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 bg-black" aria-hidden="true" />
+      <div className="fixed top-[88px] bottom-[100px] left-3 right-3 rounded-2xl overflow-hidden z-[1]">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full object-cover ${frozenSrc ? "invisible" : ""}`}
+          aria-hidden="true"
+        />
+
+        {frozenSrc && (
+          <img
+            src={frozenSrc}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            aria-hidden="true"
+          />
+        )}
+
+        {showFlash && (
+          <div
+            className="absolute inset-0 bg-white pointer-events-none z-30"
+            style={{ animation: "cameraFlash 0.35s ease-out forwards" }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
       <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
-
-      {frozenSrc && (
-        <img
-          src={frozenSrc}
-          alt=""
-          className="fixed inset-0 w-full h-full object-cover"
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Edge vignette */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 18%, transparent 78%, rgba(0,0,0,0.55) 100%)",
-        }}
-      />
-
-      {showFlash && (
-        <div
-          className="fixed inset-0 bg-white pointer-events-none z-30"
-          style={{ animation: "cameraFlash 0.35s ease-out forwards" }}
-          aria-hidden="true"
-        />
-      )}
     </>
   );
 });
