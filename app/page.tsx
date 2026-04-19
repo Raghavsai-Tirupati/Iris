@@ -43,8 +43,6 @@ export default function Home() {
   const isListeningRef = useRef(false);
   const historyRef = useRef<Message[]>([]);
   const modeRef = useRef<AppMode>("scene");
-  const modeSelectedRef = useRef(false);
-  const modeListenRef = useRef<SpeechRecognition | null>(null);
   const audioUnlockedRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -53,8 +51,6 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>("idle");
   const [isListening, setIsListening] = useState(false);
   const [responseText, setResponseText] = useState<string | null>(null);
-  const [voiceListening, setVoiceListening] = useState(false);
-  const [audioReady, setAudioReady] = useState(false);
   const [eyeOpen, setEyeOpen] = useState(false);
 
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
@@ -97,6 +93,7 @@ export default function Home() {
   }, [appState]);
 
   // ── First tap — unlock audio + welcome speech (must use onTouchStart on iOS) ──
+  // ── First tap — unlock audio, open eye, go to camera in scene mode ──
   const handleFirstTap = useCallback(() => {
     if (audioUnlockedRef.current) return;
     audioUnlockedRef.current = true;
@@ -112,91 +109,27 @@ export default function Home() {
 
     // 2. Request mic permission
     navigator.mediaDevices?.getUserMedia({ audio: true })
-      .then(stream => {
-        stream.getTracks().forEach(t => t.stop());
-        if (!modeSelectedRef.current) startModeListening();
-      })
-      .catch(() => {
-        if (!modeSelectedRef.current) startModeListening();
-      });
+      .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+      .catch(() => {});
 
     // 3. Speak welcome — must be in the SAME touchstart handler for iOS Safari
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(
-      "Welcome to Iris. Tap anywhere to describe your surroundings, or hold and speak to ask a question. Say scene mode or read mode to begin."
+      "Welcome to Iris. Tap anywhere to describe your surroundings, or hold and speak to ask a question."
     );
     u.rate = 1.0;
     window.speechSynthesis.speak(u);
 
-    setAudioReady(true);
+    // 4. Default to scene mode, open eye, transition to camera
+    setMode("scene");
+    modeRef.current = "scene";
+    setEyeOpen(true);
+    setTimeout(() => {
+      setScreen("dismissing");
+      setTimeout(() => setScreen("camera"), 500);
+    }, 1300);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ── Start listening for voice mode selection ──────────
-  const startModeListening = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      if (modeSelectedRef.current) return;
-      let transcript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript + " ";
-      }
-      const lower = transcript.toLowerCase();
-      if (lower.includes("scene")) {
-        handleSelectMode("scene");
-      } else if (lower.includes("read")) {
-        handleSelectMode("read");
-      }
-    };
-
-    recognition.onend = () => {
-      if (!modeSelectedRef.current) {
-        try { recognition.start(); } catch { /* */ }
-      }
-    };
-    recognition.onerror = () => {};
-
-    modeListenRef.current = recognition;
-    try {
-      recognition.start();
-      setVoiceListening(true);
-    } catch { /* */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Mode selection ────────────────────────────────────
-  const handleSelectMode = useCallback(
-    (selectedMode: AppMode) => {
-      if (modeSelectedRef.current) return;
-      modeSelectedRef.current = true;
-      setVoiceListening(false);
-      try { modeListenRef.current?.stop(); } catch { /* */ }
-
-      setMode(selectedMode);
-      modeRef.current = selectedMode;
-      window.speechSynthesis.cancel();
-
-      if (selectedMode === "scene") {
-        speakText("Scene mode. Tap anywhere to ask about what you see.");
-      } else {
-        speakText("Read mode. Tap anywhere and I'll read any text in view.");
-      }
-
-      setEyeOpen(true);
-      setTimeout(() => {
-        setScreen("dismissing");
-        setTimeout(() => setScreen("camera"), 500);
-      }, 1300);
-    },
-    []
-  );
 
   // ── Switch mode in camera view ────────────────────────
   const switchMode = useCallback(() => {
@@ -396,149 +329,80 @@ export default function Home() {
 
   return (
     <main className="fixed inset-0 bg-[#0a0a0a]">
-      {/* ── Landing screen — two-panel split ─────────── */}
+      {/* ── Landing screen — tap the eye to start ────── */}
       {(screen === "landing" || screen === "dismissing") && (
         <div
-          className="fixed inset-0 z-50 flex"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
           style={{
             background: "#000",
             animation: screen === "dismissing" ? "fadeOut 0.5s ease-out forwards" : undefined,
           }}
+          onClick={handleFirstTap}
+          onTouchStart={(e) => { e.preventDefault(); handleFirstTap(); }}
+          role="button"
+          tabIndex={0}
+          aria-label="Tap to start Iris"
         >
-          {/* Tap-to-start overlay — uses onTouchStart (required for iOS speechSynthesis) */}
-          {!audioReady && (
-            <div
-              className="fixed inset-0 z-[60]"
-              onClick={handleFirstTap}
-              onTouchStart={(e) => { e.preventDefault(); handleFirstTap(); }}
-              role="button"
-              tabIndex={0}
-              aria-label="Tap anywhere to start Iris"
+          {/* Eye */}
+          <svg
+            width="220"
+            height="136"
+            viewBox="0 0 100 60"
+            fill="none"
+            style={{
+              transform: eyeOpen ? undefined : "scaleY(0.22)",
+              animation: eyeOpen ? "eyeOpen 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
+            }}
+          >
+            <path
+              d="M5 30 Q25 5, 50 5 Q75 5, 95 30 Q75 55, 50 55 Q25 55, 5 30 Z"
+              stroke="white"
+              strokeWidth="1.5"
             />
-          )}
-
-          {/* ── Left panel — Scene Mode ───────────────────── */}
-          <button
-            className="triptych-panel triptych-scene flex-1 flex flex-col items-center justify-center relative"
-            onClick={() => handleSelectMode("scene")}
-            aria-label="Scene Mode: Describe what the camera sees"
-            style={{ animation: "panelSlideLeft 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both" }}
-          >
-            <span
-              className="absolute left-3 top-1/2 text-[9px] tracking-[0.3em] uppercase"
+            <circle
+              cx="50" cy="30" r="14"
+              stroke="white" strokeWidth="1.2"
               style={{
-                color: "rgba(79,195,247,0.15)",
-                transform: "translateY(-50%) rotate(-90deg)",
-                transformOrigin: "center",
-                whiteSpace: "nowrap",
+                opacity: eyeOpen ? undefined : 0,
+                transform: eyeOpen ? undefined : "scale(0.2)",
+                transformOrigin: "50px 30px",
+                animation: eyeOpen ? "pupilReveal 0.5s ease-out 0.35s both" : undefined,
               }}
-            >
-              Scene Mode
-            </span>
-
-            <p className="text-[#4FC3F7] text-[16px] font-medium tracking-[0.15em] uppercase">Scene</p>
-            <p className="text-[#333] text-[11px] mt-2 text-center px-4 leading-relaxed">
-              Describe your surroundings
-            </p>
-          </button>
-
-          {/* ── Separator ─────────────────────────────────── */}
-          <div className="w-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-
-          {/* ── Right panel — Read Mode ───────────────────── */}
-          <button
-            className="triptych-panel triptych-read flex-1 flex flex-col items-center justify-center relative"
-            onClick={() => handleSelectMode("read")}
-            aria-label="Read Mode: Read any text the camera sees"
-            style={{ animation: "panelSlideRight 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}
-          >
-            <span
-              className="absolute right-3 top-1/2 text-[9px] tracking-[0.3em] uppercase"
+            />
+            <circle
+              cx="50" cy="30" r="6"
+              fill="white"
               style={{
-                color: "rgba(129,199,132,0.15)",
-                transform: "translateY(-50%) rotate(90deg)",
-                transformOrigin: "center",
-                whiteSpace: "nowrap",
+                opacity: eyeOpen ? undefined : 0,
+                transform: eyeOpen ? undefined : "scale(0.2)",
+                transformOrigin: "50px 30px",
+                animation: eyeOpen ? "pupilReveal 0.5s ease-out 0.35s both" : undefined,
               }}
-            >
-              Read Mode
-            </span>
+            />
+          </svg>
 
-            <p className="text-[#81C784] text-[16px] font-medium tracking-[0.15em] uppercase">Read</p>
-            <p className="text-[#333] text-[11px] mt-2 text-center px-4 leading-relaxed">
-              Signs, menus &amp; documents
-            </p>
-          </button>
+          {/* "Iris" text — appears after eye opens */}
+          <h1
+            className="text-white text-[48px] sm:text-[56px] leading-[1] tracking-tight mt-5"
+            style={{
+              fontFamily: '"Times New Roman", Times, serif',
+              opacity: eyeOpen ? undefined : 0,
+              animation: eyeOpen ? "irisReveal 0.5s ease-out 0.55s both" : undefined,
+            }}
+          >
+            Iris
+          </h1>
 
-          {/* ── Center eye + branding overlay ─────────────── */}
-          <div className="absolute inset-0 flex flex-col items-center pointer-events-none z-10">
-            <div className="flex-1 flex flex-col items-center justify-center">
-              {/* Eye */}
-              <svg
-                width="220"
-                height="136"
-                viewBox="0 0 100 60"
-                fill="none"
-                style={{
-                  transform: eyeOpen ? undefined : "scaleY(0.22)",
-                  animation: eyeOpen ? "eyeOpen 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
-                }}
-              >
-                <path
-                  d="M5 30 Q25 5, 50 5 Q75 5, 95 30 Q75 55, 50 55 Q25 55, 5 30 Z"
-                  stroke="white"
-                  strokeWidth="1.5"
-                />
-                <circle
-                  cx="50" cy="30" r="14"
-                  stroke="white" strokeWidth="1.2"
-                  style={{
-                    opacity: eyeOpen ? undefined : 0,
-                    transform: eyeOpen ? undefined : "scale(0.2)",
-                    transformOrigin: "50px 30px",
-                    animation: eyeOpen ? "pupilReveal 0.5s ease-out 0.35s both" : undefined,
-                  }}
-                />
-                <circle
-                  cx="50" cy="30" r="6"
-                  fill="white"
-                  style={{
-                    opacity: eyeOpen ? undefined : 0,
-                    transform: eyeOpen ? undefined : "scale(0.2)",
-                    transformOrigin: "50px 30px",
-                    animation: eyeOpen ? "pupilReveal 0.5s ease-out 0.35s both" : undefined,
-                  }}
-                />
-              </svg>
-
-              {/* "Iris" text — appears after eye opens */}
-              <h1
-                className="text-white text-[48px] sm:text-[56px] leading-[1] tracking-tight mt-5"
-                style={{
-                  fontFamily: '"Times New Roman", Times, serif',
-                  opacity: eyeOpen ? undefined : 0,
-                  animation: eyeOpen ? "irisReveal 0.5s ease-out 0.55s both" : undefined,
-                }}
-              >
-                Iris
-              </h1>
-            </div>
-
-            {/* Bottom */}
-            <div className="pb-7 flex flex-col items-center gap-3">
-              {voiceListening && (
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2 h-2 rounded-full bg-[#EF5350]"
-                    style={{ animation: "breathe 2s ease-in-out infinite" }}
-                  />
-                  <span className="text-[#444] text-[10px]">Say a mode or tap</span>
-                </div>
-              )}
-              <p className="text-[#1a1a1a] text-[9px] tracking-[0.2em] uppercase">
-                Hook &apos;Em Hacks 2026
+          {/* Bottom */}
+          <div className="absolute bottom-7 flex flex-col items-center gap-3">
+            {!eyeOpen && (
+              <p className="text-[#333] text-[11px] tracking-[0.1em]">
+                Tap to open
               </p>
-            </div>
+            )}
+            <p className="text-[#1a1a1a] text-[9px] tracking-[0.2em] uppercase">
+              Hook &apos;Em Hacks 2026
+            </p>
           </div>
         </div>
       )}
