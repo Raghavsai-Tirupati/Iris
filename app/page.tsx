@@ -121,11 +121,26 @@ export default function Home() {
     }
   }, [appState]);
 
-  // ── Unlock audio (must be called from user gesture) ───
-  const unlockAudio = useCallback(() => {
+  // ── First tap anywhere — unlock audio + welcome speech ──
+  const handleFirstTap = useCallback(() => {
     if (audioUnlockedRef.current) return;
     audioUnlockedRef.current = true;
 
+    // Speak welcome FIRST — must be the first speechSynthesis call in the gesture
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(
+      "Welcome to SceneSpeak. Choose a mode to begin."
+    );
+    u.rate = 1.8;
+    u.onend = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    u.onerror = () => {
+      if (!modeSelectedRef.current) startModeListening();
+    };
+    window.speechSynthesis.speak(u);
+
+    // Unlock HTMLAudioElement after speech is queued
     const a = document.createElement("audio");
     a.src = SILENT_WAV;
     a.play().then(() => a.pause()).catch(() => {});
@@ -134,9 +149,11 @@ export default function Home() {
       audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
     }
 
+    // Request mic permission
     navigator.mediaDevices?.getUserMedia({ audio: true })
       .then(stream => stream.getTracks().forEach(t => t.stop()))
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Start listening for voice mode selection ──────────
@@ -186,8 +203,6 @@ export default function Home() {
       setVoiceListening(false);
       try { modeListenRef.current?.stop(); } catch { /* */ }
 
-      unlockAudio();
-
       setMode(selectedMode);
       modeRef.current = selectedMode;
       window.speechSynthesis.cancel();
@@ -201,27 +216,8 @@ export default function Home() {
       setScreen("dismissing");
       setTimeout(() => setScreen("camera"), 400);
     },
-    [unlockAudio]
+    []
   );
-
-  // ── Landing tap (not on a button) — speaks welcome ────
-  const handleLandingTap = useCallback(() => {
-    if (audioUnlockedRef.current) return;
-    unlockAudio();
-
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(
-      "Welcome to SceneSpeak. Choose a mode to begin."
-    );
-    u.rate = 1.8;
-    u.onend = () => {
-      if (!modeSelectedRef.current) startModeListening();
-    };
-    u.onerror = () => {
-      if (!modeSelectedRef.current) startModeListening();
-    };
-    window.speechSynthesis.speak(u);
-  }, [unlockAudio, startModeListening]);
 
   // ── Switch mode in camera view ────────────────────────
   const switchMode = useCallback(() => {
@@ -411,13 +407,14 @@ export default function Home() {
             background: "#000000",
             animation: screen === "dismissing" ? "fadeOut 0.4s ease-out forwards" : undefined,
           }}
+          onClick={() => { if (!audioUnlockedRef.current) handleFirstTap(); }}
+          onTouchEnd={(e) => {
+            if ((e.target as HTMLElement).closest("button")) return;
+            if (!audioUnlockedRef.current) { e.preventDefault(); handleFirstTap(); }
+          }}
         >
-          {/* ── Branding (tap here for welcome speech) ────── */}
-          <div
-            className="relative z-10 flex flex-col px-8 pt-16 sm:pt-20 cursor-pointer"
-            onClick={handleLandingTap}
-            onTouchEnd={(e) => { e.preventDefault(); handleLandingTap(); }}
-          >
+          {/* ── Branding ────────────────────────────────────── */}
+          <div className="relative z-10 flex flex-col px-8 pt-16 sm:pt-20">
             <h1
               className="font-[family-name:var(--font-serif)] text-white text-[38px] sm:text-[48px] leading-[1.1] tracking-tight"
               style={{ animation: "fadeInUp 0.5s ease-out" }}
@@ -471,8 +468,8 @@ export default function Home() {
 
             <button
               className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px]"
-              onClick={() => handleSelectMode("scene")}
-              onTouchEnd={(e) => { e.preventDefault(); handleSelectMode("scene"); }}
+              onClick={() => { if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("scene"); }}
+              onTouchEnd={(e) => { e.preventDefault(); if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("scene"); }}
               aria-label="Scene Mode: Tap to ask questions about what the camera sees"
             >
               <div className="flex items-baseline justify-between">
@@ -493,8 +490,8 @@ export default function Home() {
 
             <button
               className="w-full py-5 text-left active:opacity-60 transition-opacity min-h-[44px]"
-              onClick={() => handleSelectMode("read")}
-              onTouchEnd={(e) => { e.preventDefault(); handleSelectMode("read"); }}
+              onClick={() => { if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("read"); }}
+              onTouchEnd={(e) => { e.preventDefault(); if (!audioUnlockedRef.current) { handleFirstTap(); return; } handleSelectMode("read"); }}
               aria-label="Read Mode: Read any text the camera sees"
             >
               <div className="flex items-baseline justify-between">
