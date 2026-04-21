@@ -535,14 +535,19 @@ export default function Home() {
               </svg>
             </div>
 
-            {/* Wordmark — serif italic */}
+            {/* Wordmark — logo + serif italic */}
             <div style={{
-              marginTop: 36, fontFamily: "'Instrument Serif', serif",
-              fontSize: 76, fontWeight: 400, fontStyle: "italic",
-              letterSpacing: "0.01em", color: "#ece7d9",
+              marginTop: 36, display: "flex", alignItems: "center", gap: 16,
               opacity: 0, transform: "translateY(10px)",
               animation: "textUp 1.2s cubic-bezier(.22,.61,.36,1) 3.6s forwards",
-            }}>Iris</div>
+            }}>
+              <img src="/iris-logo.png" alt="" width={52} height={52} style={{ opacity: 0.9 }} />
+              <span style={{
+                fontFamily: "'Instrument Serif', serif",
+                fontSize: 76, fontWeight: 400, fontStyle: "italic",
+                letterSpacing: "0.01em", color: "#ece7d9",
+              }}>Iris</span>
+            </div>
 
             {/* Tagline */}
             <div style={{

@@ -30,9 +30,12 @@ export default function StatusIndicator({
       <div className="bg-black px-5 pt-12 pb-3 flex items-center justify-between">
         {/* Left — branding */}
         <div className="flex items-center gap-3">
-          <span className="text-white text-[18px] tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-            Iris
-          </span>
+          <div className="flex items-center gap-2">
+            <img src="/iris-logo.png" alt="" width={22} height={22} style={{ opacity: 0.85 }} />
+            <span className="text-white text-[18px] tracking-tight" style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}>
+              Iris
+            </span>
+          </div>
           <span className="text-[#444] text-[12px]">/</span>
           <span style={{ color: modeAccent }} className="text-[12px] font-semibold uppercase tracking-wider">
             {modeLabel} Mode
