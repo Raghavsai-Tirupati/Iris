@@ -5,6 +5,10 @@ export const metadata: Metadata = {
   title: "Iris — Visual Assistant",
   description:
     "Real-time conversational AI guide for blind and visually impaired users",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
