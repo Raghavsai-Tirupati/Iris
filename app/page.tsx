@@ -310,7 +310,7 @@ export default function Home() {
             textTransform: "uppercase" as const, color: "rgba(30,26,21,0.2)",
             opacity: 0, animation: "textUp 1.6s ease-out 3.0s forwards",
           }}>
-            Hook &apos;Em Hacks 2026 <span style={{ display: "inline-block", margin: "0 0.8em", opacity: 0.7 }}>&bull;</span> UT Austin
+            Click now to get started
           </div>
         </div>
       )}
